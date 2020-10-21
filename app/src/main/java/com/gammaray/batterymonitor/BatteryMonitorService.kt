@@ -9,57 +9,39 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.SystemClock
 import androidx.core.app.NotificationCompat
-import androidx.core.os.postDelayed
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
 class BatteryMonitorService : Service() {
     private val NOTIFICATION_ID = 415
-    private val broadcastReceiver =
-        BroadcastReceiver()
-
-    /* access modifiers changed from: private */
-    private val delay = 60000
+    private val broadcastReceiver =BroadcastReceiver()
+    private val delay:Long = 60000
     private val fileProviderService = FileProviderService()
-
-    /* access modifiers changed from: private */
-    val handler: Handler = Handler()
+    private val handler= Handler()
     private val hourFormat: SimpleDateFormat = SimpleDateFormat("HH", Locale.US)
     private val minuteFormat: SimpleDateFormat = SimpleDateFormat("mm", Locale.US)
-    private var notificationBuilder: NotificationCompat.Builder? = null
-    private var notificationManager: NotificationManager? = null
+    private lateinit var notificationBuilder: NotificationCompat.Builder
+    private lateinit var notificationManager: NotificationManager
     private val parser = LogParser()
 
-    private val runnable= Runnable {
-    fun run() {
-        this.handler.postDelayed(this,delay)
-        val batteryMonitorService: BatteryMonitorService = this.`this$0`
-        batteryMonitorService.updateEntry(batteryMonitorService)
+    private val runnable= object: Runnable {
+    override fun run() {
+        handler.postDelayed(this,delay)
+        val batteryMonitorService: BatteryMonitorService
+        updateEntry(this@BatteryMonitorService)
     }
     }
 
     companion object {
         const val UPDATE_FLAG = "com.gammaray.batteryamointor.BatteryMonitorService"
-        private val localIntent: Intent = Intent(BatteryMonitorService.Companion.UPDATE_FLAG)
-
+        private val localIntent: Intent = Intent(UPDATE_FLAG)
         var tmpLevel = -1
     }
-    /*class Companion private constructor() {
-        *//* synthetic *//*   constructor(`$constructor_marker`: DefaultConstructorMarker?) : this() {}
-
-        var tmpLevel: Int
-            get() = BatteryMonitorService.Companion.tmpLevel
-            set(i) {
-                BatteryMonitorService.Companion.tmpLevel = i
-            }
-
-    }
-*/
     override fun onBind(p0: Intent?): IBinder? {
+        updateEntry(this)
         return null
     }
-
     override fun onCreate() {
         val intentFilter = IntentFilter()
         intentFilter.addAction("android.intent.action.BATTERY_CHANGED")
@@ -73,41 +55,36 @@ class BatteryMonitorService : Service() {
             val notificationManager2 = notificationManager
             val i = NOTIFICATION_ID
             val builder = notificationBuilder
-            notificationManager2!!.notify(i, builder!!.build())
+            notificationManager2.notify(i, builder.build())
             handler.post(runnable)
     }
 
     override fun onDestroy() {
         val notificationManager2 = notificationManager
-        notificationManager2!!.cancel(NOTIFICATION_ID)
+        notificationManager2.cancel(NOTIFICATION_ID)
         unregisterReceiver(broadcastReceiver)
         super.onDestroy()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        return 1
+        return START_STICKY
     }
-
     override fun onTaskRemoved(rootIntent: Intent?) {
         val restartServiceIntent =
-            Intent(ApplicationProvider.getApplicationContext(), javaClass)
-        restartServiceIntent.setPackage(VerifyAccess.getPackageName())
+            Intent(applicationContext, javaClass)
+        restartServiceIntent.setPackage(packageName)
         val restartServicePendingIntent = PendingIntent.getService(
-            ApplicationProvider.getApplicationContext(),
+                applicationContext,
             1,
             restartServiceIntent,
-            1073741824
+            PendingIntent.FLAG_ONE_SHOT
         )
         val systemService: Any =
-            ApplicationProvider.getApplicationContext()
-                .getSystemService(NotificationCompat.CATEGORY_ALARM)
-        if (systemService != null) {
-            (systemService as AlarmManager)[3, SystemClock.elapsedRealtime() + 2000.toLong()] =
-                restartServicePendingIntent
-            super.onTaskRemoved(rootIntent)
-            return
-        }
-        throw TypeCastException("null cannot be cast to non-null type android.app.AlarmManager")
+            applicationContext
+                .getSystemService(Context.ALARM_SERVICE/*NotificationCompat.CATEGORY_ALARM*/)
+        (systemService as AlarmManager)[3, SystemClock.elapsedRealtime() + 2000.toLong()] =
+            restartServicePendingIntent
+        super.onTaskRemoved(rootIntent)
     }
 
     private fun batteryLevel(context: Context): Int {
@@ -125,13 +102,13 @@ class BatteryMonitorService : Service() {
     fun updateEntry(context: Context) {
         val file: File = fileProviderService.currentFile(context)
         val level = batteryLevel(context)
-        if (level != BatteryMonitorService.Companion.tmpLevel && level > 0) {
-            BatteryMonitorService.Companion.tmpLevel = level
+        if (level != tmpLevel && level > 0) {
+            tmpLevel = level
             val hh: String = hourFormat.format(Date())
             val mm: String = minuteFormat.format(Date())
             val logParser = parser
             logParser.write(file, hh, mm, level)
-            context.sendBroadcast(BatteryMonitorService.Companion.localIntent)
+            context.sendBroadcast(localIntent)
         }
     }
 
@@ -156,13 +133,11 @@ class BatteryMonitorService : Service() {
             val channel = NotificationChannel(
                 "com.gammaray.batterymonitor.notification_id",
                 "com.gammaray.batterymonitor.notification_name",
-                3
+                NotificationManager.IMPORTANCE_DEFAULT
             )
             channel.description = "monitor battery"
             val systemService: Any = getSystemService(Context.NOTIFICATION_SERVICE)
-            if (systemService != null) {
-                (systemService as NotificationManager).createNotificationChannel(channel)
-            }
+            (systemService as NotificationManager).createNotificationChannel(channel)
         }
     }
 
