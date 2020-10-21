@@ -20,7 +20,7 @@ class BatteryMonitorService : Service() {
         BroadcastReceiver()
 
     /* access modifiers changed from: private */
-    val delay = 60000
+    private val delay = 60000
     private val fileProviderService = FileProviderService()
 
     /* access modifiers changed from: private */
