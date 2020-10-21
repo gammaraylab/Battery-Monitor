@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.Intent
 import kotlin.jvm.internal.Intrinsics
 
-
 class BroadcastReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {
         val service = BatteryMonitorService()
@@ -20,9 +19,7 @@ class BroadcastReceiver : BroadcastReceiver() {
                     "android.intent.action.DATE_CHANGED" as Any
                 )
             ) {
-                if (context != null) {
-                    context.stopService(Intent(context, BatteryMonitorService::class.java))
-                }
+                context?.stopService(Intent(context, BatteryMonitorService::class.java))
                 if (context != null) {
                     context.startService(Intent(context, BatteryMonitorService::class.java))
                     return
@@ -39,10 +36,8 @@ class BroadcastReceiver : BroadcastReceiver() {
             ) {
                 context.startService(Intent(context, BatteryMonitorService::class.java))
             }
-        } else if (context != null) {
-            service.updateEntry(context)
-        } else {
-            throw TypeCastException("null cannot be cast to non-null type android.content.Context")
         }
+        if(context!=null)
+            service.updateEntry(context)
     }
 }

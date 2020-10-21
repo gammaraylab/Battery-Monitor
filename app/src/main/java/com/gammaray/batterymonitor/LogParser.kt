@@ -3,25 +3,22 @@ package com.gammaray.batterymonitor
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.IOException
-import java.nio.charset.Charset
 import kotlin.jvm.internal.Intrinsics
 
 class LogParser {
     fun read(file: File): ArrayList<Data> {
         var i: Int
         var i2: Int
-        val file2: File = file
-        Intrinsics.checkParameterIsNotNull(file2, "file")
-        val dataList = ArrayList<Any>()
+        Intrinsics.checkParameterIsNotNull(file, "file")
+        val dataList = ArrayList<Data>()
         try {
-            val str: String =
-                FilesKt.`readText$default`(file2, null as Charset?, 1, null as Any?)
+            val str: String =file.readText()
             var i3 = 0
             while (i3 < str.length) {
                 var i4 = i3 + 1
                 var tmpString = str[i3].toString()
                 if (str[i4] != ':') {
-                    tmpString = tmpString + str[i4].toString()
+                    tmpString += str[i4].toString()
                     i4++
                 }
                 val i5 = i4 + 1
@@ -62,28 +59,28 @@ class LogParser {
                 i3 = i2 + 1
                 val tmpLevel = tmpString3.toInt()
                 val tmp = Data()
-                tmp.setHh(tmpHour)
-                tmp.setMm(tmpMinute)
-                tmp.setLevel(tmpLevel)
+                tmp.hh=tmpHour
+                tmp.mm=(tmpMinute)
+                tmp.level=(tmpLevel)
                 dataList.add(tmp)
             }
         } catch (e: FileNotFoundException) {
-            MainActivity.Companion.errorHandler(
+            MainActivity.errorHandler(
                 "LogParser.read()",
-                file.name.toString().toString() + " not found"
+                file.name.toString() + " not found"
             )
         } catch (e2: NumberFormatException) {
-            MainActivity.Companion.errorHandler(
+            MainActivity.errorHandler(
                 "LogParser.read()",
                 "Invalid entry, clearing cache " + e2.message.toString()
             )
-            FilesKt.`writeText$default`(file2, "", null as Charset?, 2, null as Any?)
+            file.writeText("")
         } catch (e3: StringIndexOutOfBoundsException) {
-            MainActivity.Companion.errorHandler(
+            MainActivity.errorHandler(
                 "LogParser.read()",
                 "Invalid entry, clearing cache " + e3.message.toString()
             )
-            FilesKt.`writeText$default`(file2, "", null as Charset?, 2, null as Any?)
+            file.writeText("")
         }
         return dataList
     }
@@ -93,20 +90,14 @@ class LogParser {
         Intrinsics.checkParameterIsNotNull(hh, "hh")
         Intrinsics.checkParameterIsNotNull(mm, "mm")
         try {
-            FilesKt.`appendText$default`(
-                file,
-                "$hh:$mm:$level#",
-                null as Charset?,
-                2,
-                null as Any?
-            )
-            if (file.length() > 15000.toLong()) {
-                FilesKt.`writeText$default`(file, "", null as Charset?, 2, null as Any?)
+            file.appendText(
+                "$hh:$mm:$level#")
+            if (file.length() > 20000.toLong()) {
+                file.writeText("")
             }
         } catch (e: IOException) {
             e.printStackTrace()
-            val companion: MainActivity.Companion = MainActivity.Companion
-            companion.errorHandler("LogParser.write()", "Unable to write into " + file.getName())
+            MainActivity.errorHandler("LogParser.write()", "Unable to write into " + file.name)
         }
     }
 }
