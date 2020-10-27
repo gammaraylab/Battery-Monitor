@@ -1,3 +1,9 @@
 <resources>
     <string name="app_name">Battery Monitor</string>
+    <string name="today">Today</string>
+    <string name="watch_current_data">Watch current data</string>
+    <string name="battery_level">Battery level=</string>
+    <string name="unknown">unknown</string>
+    <string name="battery_voltage">Battery Voltage=</string>
+    <string name="instantaneous_current">instantaneous current=</string>
 </resources>

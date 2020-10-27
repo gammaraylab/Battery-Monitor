@@ -16,7 +16,6 @@ import android.widget.DatePicker
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
 import androidx.core.app.ActivityCompat.requestPermissions
 import androidx.core.content.ContextCompat
 import com.github.mikephil.charting.charts.LineChart
@@ -26,6 +25,7 @@ import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.data.LineData
 import com.github.mikephil.charting.data.LineDataSet
 import es.dmoral.toasty.Toasty
+import kotlinx.android.synthetic.main.activity_main.*
 import java.io.File
 import java.io.IOException
 import java.util.*
@@ -188,12 +188,9 @@ private fun initialize() {
 }
 
     fun drawChart(file:File = fileProviderService.currentFile(this)) {
-//        var xaxis:XAxis
         if (writePermission) {
             val parser = LogParser();
-            val textView =findViewById<TextView>(R.id.currentInstanceTextView);
-            val name = file.name;
-            textView.setText((name, ".txt", "", false, 4, (Object) null), "-", " ", false, 4, (Object) null));
+            currentInstanceTextView.text="${file.name}.txt"//"-", " ", false, 4, (Object) null))
             try {
                 val rawDataList = parser.read(file);
                 calculateStats(rawDataList);
@@ -227,32 +224,23 @@ private fun initialize() {
                     val yAxis:YAxis = lineChart.axisLeft
                     yAxis.granularity = 10.0f;
                     yAxis.gridColor = Color.parseColor(resources.getString(R.color.colorGraphGrid));
-//                    val lineChart2 = this.chart;
                     val yAxisRight = chart.axisRight
                     if (yAxisRight != null) {
                         yAxisRight.isEnabled = false;
-//                        val lineChart3 = this.chart;
                         xAxis = chart.xAxis
                         xAxis?.setDrawLabels(false)
-//                        val lineChart4 = this.chart;
                         chart.data = this.lineData
-//                        val lineChart5 = this.chart;
-//                        if (!((xAxis = chart.getXAxis()) == null)) {
                         xAxis.setDrawGridLines(false);
-//                        }
-//                        val lineChart6 = this.chart;
                         chart.invalidate();
                     }
                 }
-            } catch (e2: IOException) {
-                e2.printStackTrace();
-                error( this, "MainActivity.drawChart() \ncannot read from " + file.getName().toString(), 0)
-            } catch (e3: NoSuchElementException) {
-                e3.printStackTrace();
-                val textView3 =findViewById<TextView>(R.id.batteryVoltage);
-                textView3.setText("not calculated yet");
-                val textView4 = findViewById<TextView>(R.id.batteryLevel);
-                textView4.setText("not calculated yet");
+            } catch (e: IOException) {
+                e.printStackTrace();
+                error( this, "MainActivity.drawChart() \ncannot read from " + file.name.toString(), 0)
+            } catch (e: NoSuchElementException) {
+                e.printStackTrace();
+                batteryVoltage.text="not calculated yet"
+                batteryLevel.text="not calculated yet"
                 error( this, "no Entry present in the system", 0)
             }
         }

@@ -116,7 +116,7 @@ class BatteryMonitorService : Service() {
         val notificationBuilder2 =
             NotificationCompat.Builder(this, "com.gammaray.batterymonitor.notification_id")
                 .setContentTitle("Battery monitor").setContentText("service running")
-                .setSmallIcon(R.drawable.icon_notification)
+                .setSmallIcon(R.drawable.ic_notification_small)
         notificationBuilder2.setContentIntent(
             PendingIntent.getActivity(
                 this, 0, Intent(
