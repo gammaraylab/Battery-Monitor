@@ -4,7 +4,6 @@ import android.app.DatePickerDialog
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.graphics.Color
 import android.os.BatteryManager
 import android.os.Bundle
 import android.util.Log
@@ -12,7 +11,6 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.Button
-import android.widget.DatePicker
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -29,7 +27,6 @@ import kotlinx.android.synthetic.main.activity_main.*
 import java.io.File
 import java.io.IOException
 import java.util.*
-import kotlin.NoSuchElementException
 import kotlin.collections.ArrayList
 import kotlin.jvm.internal.Intrinsics
 
@@ -38,10 +35,9 @@ companion object {
     const val READ_REQUEST_CODE = 45
     var instance: MainActivity? = null
     var writePermission: Boolean=false
-    var watchingHistory: Boolean=false
     fun errorHandler(site: String?, error: String) {
         Log.e(site, error)
-//        Toast.makeText(this, error, 1).show()
+        Toast.makeText(instance, error, Toast.LENGTH_SHORT).show()
     }
 
     fun logger(message: String, tag: String?) {
@@ -67,23 +63,10 @@ companion object {
     init {
         instance = this
     }
-private val monthList = arrayOf(
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec"
-)
+private val monthList = arrayOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
 var watchingHistory = false
 var writePermission = false
-var batteryManager: BatteryManager? = null
+lateinit var batteryManager: BatteryManager
 var batteryStatusIntent: Intent? = null
 private val broadcastReceiver=BroadcastReceiver()
 private lateinit var chart: LineChart
@@ -94,13 +77,13 @@ private val fileProviderService = FileProviderService()
 override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     setContentView(R.layout.activity_main)
-    quickUpdate.start()
+//    quickUpdate.start()
     this.batteryStatusIntent = registerReceiver(broadcastReceiver,IntentFilter("android.intent.action.BATTERY_CHANGED"))
     initialize()
 }
 
 override fun onResume() {
-    quickUpdate.start()
+//    quickUpdate.start()
     registerReceiver(this.broadcastReceiver, IntentFilter(BatteryMonitorService.UPDATE_FLAG))
     if (!watchingHistory) {
         drawChart()
@@ -112,12 +95,12 @@ override fun onDestroy() {
     super.onDestroy()
 }
 override fun onPause() {
-    this.quickUpdate.cancel()
+//    this.quickUpdate.cancel()
     super.onPause()
 }
 override fun onRequestPermissionsResult(requestCode: Int, permission: Array<String>,grantResults: IntArray) {
     when {
-        requestCode != 45 -> {
+        requestCode != READ_REQUEST_CODE -> {
             super.onRequestPermissionsResult(requestCode, permission, grantResults)
         }
         grantResults[0] != 0 -> {
@@ -127,7 +110,7 @@ override fun onRequestPermissionsResult(requestCode: Int, permission: Array<Stri
                     "android.permission.READ_EXTERNAL_STORAGE",
                     "android.permission.WRITE_EXTERNAL_STORAGE"
                 ),
-                45
+                READ_REQUEST_CODE
             )
         }
         else -> {
@@ -150,13 +133,36 @@ override fun onOptionsItemSelected(item: MenuItem): Boolean {
         finish()
     else if (itemId == R.id.history) {
         val calendar: Calendar = Calendar.getInstance()
-        DatePickerDialog(
-            this,
+        val day = calendar.get(Calendar.DAY_OF_MONTH)
+        val month = calendar.get(Calendar.MONTH)
+        val year = calendar.get(Calendar.YEAR)
 
-            calendar.get(1),
-            calendar.get(2),
-            calendar.get(5)
-        ).show()
+        val dpd = DatePickerDialog(this, { _, year1, monthOfYear, dayOfMonth ->
+            val monthNew: String = monthList[monthOfYear]
+            var dayNew = dayOfMonth.toString()
+            if (dayOfMonth.toString().length == 1) {
+                val sb = java.lang.StringBuilder()
+                sb.append('0')
+                sb.append(dayOfMonth)
+                dayNew = sb.toString()
+            } else {
+                val i = dayOfMonth
+            }
+            val filesDir: File = this.filesDir
+            val file = File(filesDir, "$dayNew-$monthNew-$year1.txt")
+            if (file.exists()) {
+                this.drawChart(file)
+                watchingHistory=true
+                val button: Button =
+                    this.findViewById(R.id.watchCurrentData)
+                button.visibility = View.VISIBLE
+            }
+            warn(this,"No entry available",0)
+            watchingHistory=false
+
+        }, year, month, day)
+
+        dpd.show()
     }
     return true
 }
@@ -169,11 +175,11 @@ override fun onBackPressed() {
 private fun initialize() {
     registerReceiver(this.broadcastReceiver, IntentFilter(BatteryMonitorService.UPDATE_FLAG))
     val systemService: Any = getSystemService(Context.BATTERY_SERVICE)
-    this.batteryManager = systemService as BatteryManager
+    batteryManager = systemService as BatteryManager
     val marker = BatteryLevelMarker(this, R.layout.marker_view)
     chart = this.findViewById(R.id.chart)
     chart.setDrawGridBackground(false)
-    chart.setMarker(marker)
+    chart.marker = marker
     if (checkPermissions()) {
         startService(Intent(this, BatteryMonitorService::class.java))
         writePermission = true
@@ -190,7 +196,11 @@ private fun initialize() {
     fun drawChart(file:File = fileProviderService.currentFile(this)) {
         if (writePermission) {
             val parser = LogParser();
-            currentInstanceTextView.text="${file.name}.txt"//"-", " ", false, 4, (Object) null))
+            var sb=StringBuilder()
+            sb.append(file.name)
+//            sb.append(".txt")
+            currentInstanceTextView.text=sb//"-", " ", false, 4, (Object) null))
+            sb.clear()
             try {
                 val rawDataList = parser.read(file);
                 calculateStats(rawDataList);
@@ -198,7 +208,7 @@ private fun initialize() {
                 if (rawDataList.isNotEmpty()) {
                     val it = rawDataList . iterator ();
                     var averageLevel = 0;
-                    while (!it.hasNext().equals(0)) {
+                    while (!it.hasNext()) {
                         val i = it.next();
                         averageLevel += i.level
                         entries.add(Entry(((i.hh * 60) + i.mm).toFloat(),  i.level.toFloat()));
@@ -208,22 +218,25 @@ private fun initialize() {
                     } catch ( e:ArithmeticException) {
                         e.printStackTrace()
                     }
-                    val textView2 = findViewById<TextView>(R.id.batteryLevel);
-                    textView2.text = "${rawDataList.last().level}%"
-                    val dataSet = LineDataSet(entries, "Battery level");
-                    dataSet.lineWidth = 1.0f;
-                    dataSet.setDrawValues(false);
-                    dataSet.setDrawCircles(false);
-                    dataSet.setDrawFilled(true);
-                    dataSet.fillColor = Color.parseColor(resources.getString(R.color.colorFillGraph));
-                    dataSet.color = Color.parseColor(resources.getString(R.color.colorGraphLine));
-                    dataSet.mode = LineDataSet.Mode.LINEAR;
-                    this.lineData = LineData(dataSet);
-                    val lineChart:LineChart = this.chart;
+                    sb= StringBuilder()
+                    sb.append(rawDataList.last().level)
+                    sb.append("%")
+                    batteryLevel.text = sb
+                    val dataSet = LineDataSet(entries, "Battery level")
+                    dataSet.lineWidth = 1.0f
+                    dataSet.setDrawValues(false)
+                    dataSet.setDrawCircles(false)
+                    dataSet.setDrawFilled(true)
+                    dataSet.fillColor = R.color.colorFillGraph
+                    dataSet.color = R.color.colorGraphLine
+                    dataSet.mode = LineDataSet.Mode.LINEAR
+                    this.lineData = LineData(dataSet)
+                    val lineChart:LineChart = this.chart
                     val xAxis:XAxis
                     val yAxis:YAxis = lineChart.axisLeft
-                    yAxis.granularity = 10.0f;
-                    yAxis.gridColor = Color.parseColor(resources.getString(R.color.colorGraphGrid));
+                    yAxis.granularity = 10.0f
+
+                    yAxis.gridColor = R.color.colorGraphGrid
                     val yAxisRight = chart.axisRight
                     if (yAxisRight != null) {
                         yAxisRight.isEnabled = false;
@@ -238,9 +251,11 @@ private fun initialize() {
                 e.printStackTrace();
                 error( this, "MainActivity.drawChart() \ncannot read from " + file.name.toString(), 0)
             } catch (e: NoSuchElementException) {
-                e.printStackTrace();
-                batteryVoltage.text="not calculated yet"
-                batteryLevel.text="not calculated yet"
+                e.printStackTrace()
+                sb.append("not calculated yet")
+                batteryVoltage.text=sb
+                batteryLevel.text=sb
+                sb.clear()
                 error( this, "no Entry present in the system", 0)
             }
         }
@@ -258,62 +273,24 @@ fun onClick(it: View?) {
     watchingHistory=false
     drawChart()
 }
-fun onReceive(context: Context?, intent: Intent?) {
-    if (!watchingHistory) {
-        drawChart()
-    }
-}
-fun onDateSet(
-    `$noName_0`: DatePicker?,
-    year1: Int,
-    monthOfYear: Int,
-    dayOfMonth: Int
-) {
-    val monthNew: String = monthList[monthOfYear]
-    var dayNew = dayOfMonth.toString()
-    if (dayOfMonth.toString().length == 1) {
-        val sb = java.lang.StringBuilder()
-        sb.append('0')
-        sb.append(dayOfMonth)
-        dayNew = sb.toString()
-    } else {
-        val i = dayOfMonth
-    }
-    val filesDir: File = this.filesDir
-    val file =
-        File(filesDir, "$dayNew-$monthNew-$year1.txt")
-    if (file.exists()) {
-        this.drawChart(file)
-        watchingHistory=true
-        val button: Button =
-            this.findViewById(R.id.watchCurrentData)
-        button.setVisibility(View.VISIBLE)
-    }
-warn(this,"No entry available",0)
-    watchingHistory=false
-}
 
+fun onReceive(context: Context?, intent: Intent?) {
+    if (!watchingHistory)
+        drawChart()
+}
 fun onTick(p0: Long) {
-    val textView =findViewById<TextView>(R.id.batteryVoltage)
-    val sb = java.lang.StringBuilder()
-    val `access$getBatteryStatusIntent$p`: Intent? = this.batteryStatusIntent
-    var num: Int? = null
-    sb.append(
-            Integer.valueOf(
-                `access$getBatteryStatusIntent$p`.getIntExtra("voltage", -1)
-            )
-    )
+    val sb = StringBuilder()
+    val getBatteryStatusIntent: Intent? = this.batteryStatusIntent
+    sb.append(getBatteryStatusIntent?.getIntExtra(BatteryManager.EXTRA_VOLTAGE, -1))
     sb.append("V")
-    textView.text = sb.toString()
-    val batteryManager: BatteryManager? = this.batteryManager
-    num = Integer.valueOf(batteryManager?.getIntProperty(2).toString())
-    val tmp = num
-    if (tmp == null) {
-        Intrinsics.throwNpe()
-    }
-    val tmp2 = Integer.valueOf(-tmp!!.toInt() / 1000)
-    val textView2 =this.findViewById<TextView>(R.id.batteryCurrent)
-    textView2.text = "$tmp2 mA"
+    batteryVoltage.text = sb.toString()
+    val batteryManager: BatteryManager = batteryManager
+    val num:Int = batteryManager.getIntProperty(2)
+    val tmp:Int = -num / 1000
+    sb.clear()
+    sb.append(tmp)
+    sb.append("mA")
+    batteryCurrent.text = sb
 }
 
 private fun requestPermissions() {
@@ -323,13 +300,14 @@ private fun requestPermissions() {
             "android.permission.READ_EXTERNAL_STORAGE",
             "android.permission.WRITE_EXTERNAL_STORAGE"
         ),
-        45
+        READ_REQUEST_CODE
     )
 }
 
 fun timeTillFull(rawData: ArrayList<StatDataModel>): String {
+    if(rawData.isEmpty())
+        return "empty"
     val rate: Double = rawData.last().rate()
-
     val sb = StringBuilder()
     sb.append((60.0 * rate / rawData.size.toDouble()).format())
     sb.append("%per hour")
@@ -352,6 +330,8 @@ private fun calculateStats(rawData: ArrayList<Data>) {
     val data = StatDataModel()
     val mx = Vector<Int>()
     val mn = Vector<Int>()
+    if(rawData.isEmpty())
+        return
     try {
         val n: Int = rawData.size
         var isCharging = true

@@ -11,9 +11,8 @@ import java.util.*
     fun currentFile(context: Context): File {
         val filesDir = context.filesDir
         val file = File(filesDir, this.dateFormat.format(Date()) + ".txt")
-        if (!file.exists() && MainActivity.writePermission) {
+        if (!file.exists() && MainActivity.writePermission)
             file.createNewFile()
-        }
         return file
     }
 }

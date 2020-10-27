@@ -10,7 +10,7 @@
 
     <color name="color_marker">#C1C1C1</color>
     <color name="color_marker_border">#717171</color>
-    <color name="colorFillGraph">#EBFFD5</color>
+    <color name="colorFillGraph">#FFEBFFD5</color>
     <color name="colorGraphLine">#9CDF4E</color>
     <color name="colorGraphGrid">#EDFFD9</color>
 </resources>
