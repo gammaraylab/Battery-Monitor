@@ -20,6 +20,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/today" />
+
         <com.github.mikephil.charting.charts.LineChart
             android:id="@+id/chart"
             android:layout_width="match_parent"
@@ -28,6 +29,7 @@
         <Button
             android:id="@+id/watchCurrentData"
             android:visibility="gone"
+            android:onClick="viewHistory"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/watch_current_data"

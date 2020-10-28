@@ -139,26 +139,24 @@ override fun onOptionsItemSelected(item: MenuItem): Boolean {
 
         val dpd = DatePickerDialog(this, { _, year1, monthOfYear, dayOfMonth ->
             val monthNew: String = monthList[monthOfYear]
-            var dayNew = dayOfMonth.toString()
+            val sb = java.lang.StringBuilder()
             if (dayOfMonth.toString().length == 1) {
-                val sb = java.lang.StringBuilder()
                 sb.append('0')
                 sb.append(dayOfMonth)
-                dayNew = sb.toString()
-            } else {
-                val i = dayOfMonth
-            }
+            } else
+                sb.append(dayOfMonth.toString())
+
             val filesDir: File = this.filesDir
-            val file = File(filesDir, "$dayNew-$monthNew-$year1.txt")
+            val file = File(filesDir, "$sb-$monthNew-$year1.txt")
             if (file.exists()) {
                 this.drawChart(file)
                 watchingHistory=true
-                val button: Button =
-                    this.findViewById(R.id.watchCurrentData)
-                button.visibility = View.VISIBLE
+                watchCurrentData.visibility = View.VISIBLE
             }
-            warn(this,"No entry available",0)
-            watchingHistory=false
+            else{
+                warn(this,"No entry available",0)
+                watchingHistory=false
+            }
 
         }, year, month, day)
 
@@ -196,11 +194,9 @@ private fun initialize() {
     fun drawChart(file:File = fileProviderService.currentFile(this)) {
         if (writePermission) {
             val parser = LogParser();
-            var sb=StringBuilder()
-            sb.append(file.name)
-//            sb.append(".txt")
-            currentInstanceTextView.text=sb//"-", " ", false, 4, (Object) null))
-            sb.clear()
+            val sb=StringBuilder()
+            val name=file.name.replace(".txt","",true)
+            currentInstanceTextView.text=name
             try {
                 val rawDataList = parser.read(file);
                 calculateStats(rawDataList);
@@ -214,11 +210,11 @@ private fun initialize() {
                         entries.add(Entry(((i.hh * 60) + i.mm).toFloat(),  i.level.toFloat()));
                     }
                     try {
-                        val size = averageLevel / rawDataList.size
+//                        val size = averageLevel / rawDataList.size
                     } catch ( e:ArithmeticException) {
                         e.printStackTrace()
                     }
-                    sb= StringBuilder()
+                    sb.clear()
                     sb.append(rawDataList.last().level)
                     sb.append("%")
                     batteryLevel.text = sb
@@ -267,9 +263,9 @@ private fun checkPermissions(): Boolean {
         ContextCompat.checkSelfPermission(this, "android.permission.WRITE_EXTERNAL_STORAGE")
     return permissionRead == 0 && permissionWrite == 0
 }
-fun onClick(it: View?) {
-    val button: Button =findViewById(R.id.watchCurrentData)
-    button.visibility = View.VISIBLE
+fun viewHistory(it: View?) {
+//    val button: Button =findViewById(R.id.)
+    watchCurrentData.visibility = View.GONE//VISIBLE
     watchingHistory=false
     drawChart()
 }
