@@ -193,21 +193,21 @@ private fun initialize() {
 
     fun drawChart(file:File = fileProviderService.currentFile(this)) {
         if (writePermission) {
-            val parser = LogParser();
+            val parser = LogParser()
             val sb=StringBuilder()
             val name=file.name.replace(".txt","",true)
             currentInstanceTextView.text=name
             try {
-                val rawDataList = parser.read(file);
-                calculateStats(rawDataList);
-                val entries = ArrayList<Entry>();
+                val rawDataList = parser.read(file)
+                calculateStats(rawDataList)
+                val entries = ArrayList<Entry>()
                 if (rawDataList.isNotEmpty()) {
-                    val it = rawDataList . iterator ();
-                    var averageLevel = 0;
+                    val it = rawDataList . iterator ()
+                    var averageLevel = 0
                     while (!it.hasNext()) {
-                        val i = it.next();
+                        val i = it.next()
                         averageLevel += i.level
-                        entries.add(Entry(((i.hh * 60) + i.mm).toFloat(),  i.level.toFloat()));
+                        entries.add(Entry(((i.hh * 60) + i.mm).toFloat(),  i.level.toFloat()))
                     }
                     try {
 //                        val size = averageLevel / rawDataList.size
@@ -264,7 +264,6 @@ private fun checkPermissions(): Boolean {
     return permissionRead == 0 && permissionWrite == 0
 }
 fun viewHistory(it: View?) {
-//    val button: Button =findViewById(R.id.)
     watchCurrentData.visibility = View.GONE//VISIBLE
     watchingHistory=false
     drawChart()
