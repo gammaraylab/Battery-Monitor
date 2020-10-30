@@ -50,12 +50,10 @@ class LogParser {
                         i2 = i9 + 1
                         sb3.append(str[i9].toString())
                         tmpString3 = sb3.toString()
-                    } else {
+                    } else
                         i2 = i9
-                    }
-                } else {
+                } else
                     i2 = i8
-                }
                 i3 = i2 + 1
                 val tmpLevel = tmpString3.toInt()
                 val tmp = Data()
@@ -86,15 +84,11 @@ class LogParser {
     }
 
     fun write(file: File, hh: String, mm: String, level: Int) {
-        Intrinsics.checkParameterIsNotNull(file, "file")
-        Intrinsics.checkParameterIsNotNull(hh, "hh")
-        Intrinsics.checkParameterIsNotNull(mm, "mm")
         try {
             file.appendText(
                 "$hh:$mm:$level#")
-            if (file.length() > 20000.toLong()) {
+            if (file.length() > 20000.toLong())
                 file.writeText("")
-            }
         } catch (e: IOException) {
             e.printStackTrace()
             MainActivity.errorHandler("LogParser.write()", "Unable to write into " + file.name)

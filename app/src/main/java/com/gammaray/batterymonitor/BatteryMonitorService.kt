@@ -4,10 +4,7 @@ import android.app.*
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.os.Build
-import android.os.Handler
-import android.os.IBinder
-import android.os.SystemClock
+import android.os.*
 import androidx.core.app.NotificationCompat
 import java.io.File
 import java.text.SimpleDateFormat
@@ -18,23 +15,22 @@ class BatteryMonitorService : Service() {
     private val broadcastReceiver =BroadcastReceiver()
     private val delay:Long = 60000
     private val fileProviderService = FileProviderService()
-    private val handler= Handler()
     private val hourFormat: SimpleDateFormat = SimpleDateFormat("HH", Locale.US)
     private val minuteFormat: SimpleDateFormat = SimpleDateFormat("mm", Locale.US)
     private lateinit var notificationBuilder: NotificationCompat.Builder
     private lateinit var notificationManager: NotificationManager
     private val parser = LogParser()
 
-    private val runnable= object: Runnable {
-    override fun run() {
-        handler.postDelayed(this,delay)
-        val batteryMonitorService: BatteryMonitorService
-        updateEntry(this@BatteryMonitorService)
-    }
+    private val runnable=object: Runnable {
+        override fun run() {
+            Handler(Looper.getMainLooper()).postDelayed(this,delay)
+            updateEntry(this@BatteryMonitorService)
+            MainActivity.success(this@BatteryMonitorService,"running",0)
+        }
     }
 
     companion object {
-        const val UPDATE_FLAG = "com.gammaray.batteryamointor.BatteryMonitorService"
+        const val UPDATE_FLAG = "com.gammaray.batterymonitor.BatteryMonitorService"
         private val localIntent: Intent = Intent(UPDATE_FLAG)
         var tmpLevel = -1
     }
@@ -56,7 +52,9 @@ class BatteryMonitorService : Service() {
             val i = NOTIFICATION_ID
             val builder = notificationBuilder
             notificationManager2.notify(i, builder.build())
-            handler.post(runnable)
+//            handler.post(runnable)
+            Handler(Looper.getMainLooper()).postDelayed({runnable
+            },delay)
     }
 
     override fun onDestroy() {
@@ -91,11 +89,10 @@ class BatteryMonitorService : Service() {
         var num: Int=-1
         val batteryStatus = context.registerReceiver(
             null as BroadcastReceiver?,
-            IntentFilter("android.intent.action.BATTERY_CHANGED")
+            IntentFilter(Intent.ACTION_BATTERY_CHANGED)
         )
-        if (batteryStatus != null) {
-            num = Integer.valueOf(batteryStatus.getIntExtra("level", -1))
-        }
+        if (batteryStatus != null)
+            num = Integer.valueOf(batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1))
         return num
     }
 
