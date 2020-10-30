@@ -92,7 +92,7 @@ class BatteryMonitorService : Service() {
             IntentFilter(Intent.ACTION_BATTERY_CHANGED)
         )
         if (batteryStatus != null)
-            num = Integer.valueOf(batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1))
+            num = batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
         return num
     }
 

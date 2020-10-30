@@ -1,6 +1,7 @@
 package com.gammaray.batterymonitor
 
 import android.app.DatePickerDialog
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
@@ -42,22 +43,22 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(instance, error, Toast.LENGTH_SHORT).show()
         }
 
-        fun logger(message: String, tag: String?) {
+        fun logger(message: String, tag: String="Testing") {
             Log.e(tag, message)
         }
 
-        fun error(instance: Context, message: String, length: Int) {
+        fun error(instance: Context, message: String, length: Int=Toasty.LENGTH_SHORT) {
             Log.e("ERROR", message)
             Toasty.error(instance, message, length).show()
         }
 
-        fun warn(instance: Context, message: String, length: Int) {
+        fun warn(instance: Context, message: String, length: Int=Toasty.LENGTH_SHORT) {
             Intrinsics.checkParameterIsNotNull(message, "message")
             Log.e("WARNING", message)
             Toasty.warning(instance, message, length).show()
         }
 
-        fun success(instance: Context, message: String, length: Int) {
+        fun success(instance: Context, message: String, length: Int=Toasty.LENGTH_SHORT) {
             Log.e("SUCCESS", message)
             Toasty.success(instance, message, length).show()
         }
@@ -69,8 +70,13 @@ class MainActivity : AppCompatActivity() {
     var watchingHistory = false
     var writePermission = false
     private lateinit var batteryManager: BatteryManager
-    private var batteryStatusIntent: Intent?=null
-    private val broadcastReceiver=BroadcastReceiver()
+    private var batteryStatus: Intent?=null
+    private val broadcastReceiver=object:BroadcastReceiver(){
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (!watchingHistory)
+                drawChart()
+        }
+    }
     private lateinit var lineData: LineData
     private val fileProviderService = FileProviderService()
     //private val quickUpdate=//
@@ -78,7 +84,7 @@ class MainActivity : AppCompatActivity() {
     private val runnable= object:Runnable {
         override fun run() {
             sb.clear()
-            sb.append(batteryStatusIntent?.getIntExtra(BatteryManager.EXTRA_VOLTAGE, -1))
+            sb.append(batteryStatus?.getIntExtra(BatteryManager.EXTRA_VOLTAGE, -1))
             sb.append("V")
             batteryVoltage.text = sb.toString()
             val num: Int = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW)
@@ -94,8 +100,9 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+//        test.setBackgroundColor(resources.getColor(R.color.colorGraphLine))
     //    quickUpdate.start()
-        batteryStatusIntent = registerReceiver(broadcastReceiver,IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+
         initialize()
     }
     override fun onResume() {
@@ -181,8 +188,8 @@ class MainActivity : AppCompatActivity() {
     private fun initialize() {
         Handler(Looper.getMainLooper()).postDelayed(runnable,1000)
         registerReceiver(broadcastReceiver, IntentFilter(BatteryMonitorService.UPDATE_FLAG))
+        batteryStatus = registerReceiver(null,IntentFilter(Intent.ACTION_BATTERY_CHANGED))
         batteryManager = getSystemService(Context.BATTERY_SERVICE) as BatteryManager
-    //    val marker = BatteryLevelMarker(this, R.layout.marker_view)
         chart.setDrawGridBackground(false)
         chart.marker = BatteryLevelMarker(this, R.layout.marker_view) //marker
         if (checkPermissions()) {
@@ -196,8 +203,10 @@ class MainActivity : AppCompatActivity() {
         requestPermissions()
     }
     private fun drawChart(file:File = fileProviderService.currentFile(this)) {
+        logger(writePermission.toString())
         if (writePermission) {
             val parser = LogParser()
+            success(this,"file name ${file.name}")
             val name=file.name.replace(".txt","",true)
             currentInstanceTextView.text=name
             try {
@@ -214,7 +223,8 @@ class MainActivity : AppCompatActivity() {
                         entries.add(Entry(((i.hh * 60) + i.mm).toFloat(),  i.level.toFloat()))
                     }
                     try {
-    //                        val size = averageLevel / rawDataList.size
+                            val size = averageLevel / rawDataList.size
+//                            display average battery level
                     } catch ( e:ArithmeticException) {
                         e.printStackTrace()
                     }
@@ -227,25 +237,21 @@ class MainActivity : AppCompatActivity() {
                     dataSet.setDrawValues(false)
                     dataSet.setDrawCircles(false)
                     dataSet.setDrawFilled(true)
-                    dataSet.fillColor = R.color.colorFillGraph
-                    dataSet.color = R.color.colorGraphLine
+                    dataSet.fillColor = resources.getColor(R.color.colorFillGraph)
+                    dataSet.color =resources.getColor(R.color.colorGraphLine)
                     dataSet.mode = LineDataSet.Mode.LINEAR
                     lineData = LineData(dataSet)
                     val lineChart:LineChart = this.chart
-                    val xAxis:XAxis
                     val yAxis:YAxis = lineChart.axisLeft
                     yAxis.granularity = 10.0f
-
-                    yAxis.gridColor = R.color.colorGraphGrid
+                    yAxis.gridColor = resources.getColor(R.color.colorGraphGrid)
                     val yAxisRight = chart.axisRight
-                    if (yAxisRight != null) {
-                        yAxisRight.isEnabled = false;
-                        xAxis = chart.xAxis
-                        xAxis?.setDrawLabels(false)
-                        chart.data = lineData
-                        xAxis.setDrawGridLines(false);
-                        chart.invalidate();
-                    }
+                    yAxisRight.isEnabled = false;
+                    val xAxis = chart.xAxis
+                    xAxis.setDrawLabels(false)
+                    chart.data = lineData
+                    xAxis.setDrawGridLines(false);
+                    chart.invalidate();
                 }
             } catch (e: IOException) {
                 e.printStackTrace();
@@ -281,9 +287,5 @@ class MainActivity : AppCompatActivity() {
         watchCurrentData.visibility = View.GONE//VISIBLE
         watchingHistory=false
         drawChart()
-    }
-    fun onReceive(context: Context?, intent: Intent?) {
-        if (!watchingHistory)
-            drawChart()
     }
 }
