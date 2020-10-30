@@ -180,6 +180,11 @@ class MainActivity : AppCompatActivity() {
         }
         return true
     }
+    fun viewHistory(it: View?) {
+        watchCurrentData.visibility = View.GONE
+        watchingHistory=false
+        drawChart()
+    }
     override fun onBackPressed() {
         finish()
         super.onBackPressed()
@@ -206,7 +211,6 @@ class MainActivity : AppCompatActivity() {
         logger(writePermission.toString())
         if (writePermission) {
             val parser = LogParser()
-            success(this,"file name ${file.name}")
             val name=file.name.replace(".txt","",true)
             currentInstanceTextView.text=name
             try {
@@ -215,11 +219,9 @@ class MainActivity : AppCompatActivity() {
 //                stats.calculateStats(rawDataList)
                 val entries = ArrayList<Entry>()
                 if (rawDataList.isNotEmpty()) {
-                    val it = rawDataList . iterator ()
                     var averageLevel = 0
-                    while (!it.hasNext()) {
-                        val i = it.next()
-                        averageLevel += i.level
+                    for(i in rawDataList){
+                        averageLevel+=i.level
                         entries.add(Entry(((i.hh * 60) + i.mm).toFloat(),  i.level.toFloat()))
                     }
                     try {
@@ -237,14 +239,14 @@ class MainActivity : AppCompatActivity() {
                     dataSet.setDrawValues(false)
                     dataSet.setDrawCircles(false)
                     dataSet.setDrawFilled(true)
-                    dataSet.fillColor = resources.getColor(R.color.colorFillGraph)
-                    dataSet.color =resources.getColor(R.color.colorGraphLine)
+                    dataSet.fillColor =ContextCompat.getColor(this,R.color.colorFillGraph)
+                    dataSet.color =ContextCompat.getColor(this,R.color.colorGraphLine)
                     dataSet.mode = LineDataSet.Mode.LINEAR
                     lineData = LineData(dataSet)
-                    val lineChart:LineChart = this.chart
-                    val yAxis:YAxis = lineChart.axisLeft
+                    val yAxis:YAxis = chart.axisLeft
                     yAxis.granularity = 10.0f
-                    yAxis.gridColor = resources.getColor(R.color.colorGraphGrid)
+                    yAxis.setDrawGridLines(true)
+                    yAxis.gridColor = ContextCompat.getColor(this,R.color.colorGraphGrid)
                     val yAxisRight = chart.axisRight
                     yAxisRight.isEnabled = false;
                     val xAxis = chart.xAxis
@@ -282,10 +284,5 @@ class MainActivity : AppCompatActivity() {
                 ),
                 READ_REQUEST_CODE
             )
-    }
-    fun viewHistory(it: View?) {
-        watchCurrentData.visibility = View.GONE//VISIBLE
-        watchingHistory=false
-        drawChart()
     }
 }

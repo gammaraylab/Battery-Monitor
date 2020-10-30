@@ -25,7 +25,7 @@ class BatteryMonitorService : Service() {
         override fun run() {
             Handler(Looper.getMainLooper()).postDelayed(this,delay)
             updateEntry(this@BatteryMonitorService)
-            MainActivity.success(this@BatteryMonitorService,"running",0)
+//            MainActivity.success(this@BatteryMonitorService,"running",0)
         }
     }
 

@@ -8,9 +8,9 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
 
-    <color name="color_marker">#C1C1C1</color>
-    <color name="color_marker_border">#717171</color>
+    <color name="color_marker_solid">#94FFFFFF</color>
+    <color name="color_marker_border">#AEAEAE</color>
     <color name="colorFillGraph">#FFEBFFD5</color>
     <color name="colorGraphLine">#9CDF4E</color>
-    <color name="colorGraphGrid">#EDFFD9</color>
+    <color name="colorGraphGrid">#CCFF90</color>
 </resources>
