@@ -36,26 +36,22 @@ class Stats {
             if (rawData[0].level > rawData[1].level) {
                 isCharging = false
                 mx.add(0)
-            } else if (rawData[0].level< rawData[1].level) {
+            } else if (rawData[0].level< rawData[1].level)
                 mn.add(0)
-            }
+
             val i = n - 1
             for (i2 in 1 until i) {
                 if (rawData[i2 - 1].level > rawData[i2].level && rawData[i2]
-                        .level< rawData[i2 + 1].level
-                ) {
+                        .level< rawData[i2 + 1].level)
                     mn.add(Integer.valueOf(i2))
-                } else if (rawData[i2 - 1].level < rawData[i2]
-                        .level && rawData[i2].level > rawData[i2 + 1].level
-                ) {
+                else if (rawData[i2 - 1].level < rawData[i2]
+                        .level && rawData[i2].level > rawData[i2 + 1].level)
                     mx.add(Integer.valueOf(i2))
-                }
             }
-            if (rawData[n - 1].level > rawData[n - 2].level) {
+            if (rawData[n - 1].level > rawData[n - 2].level)
                 mx.add(Integer.valueOf(n - 1))
-            } else if (rawData[n - 1].level < rawData[n - 2].level) {
+            else if (rawData[n - 1].level < rawData[n - 2].level)
                 mn.add(Integer.valueOf(n - 1))
-            }
             var first:Int
             while (mx.isNotEmpty() && mn.isNotEmpty()) {
                 if (isCharging) {
@@ -79,8 +75,8 @@ class Stats {
                 }
                 isCharging = !isCharging
             }
-//            timeTillFull(charge)
-//            timeTillEmpty(discharge)
+            timeTillFull(charge)
+            timeTillEmpty(discharge)
         } catch (e: NoSuchElementException) {
             e.printStackTrace()
         } catch (e2: IndexOutOfBoundsException) {

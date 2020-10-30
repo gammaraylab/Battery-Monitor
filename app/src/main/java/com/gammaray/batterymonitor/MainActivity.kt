@@ -13,14 +13,10 @@ import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.widget.Button
-import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat.requestPermissions
 import androidx.core.content.ContextCompat
-import com.github.mikephil.charting.charts.LineChart
-import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.components.YAxis
 import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.data.LineData
@@ -68,7 +64,7 @@ class MainActivity : AppCompatActivity() {
     }
     private val monthList = arrayOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
     var watchingHistory = false
-    var writePermission = false
+    private var writePermission = false
     private lateinit var batteryManager: BatteryManager
     private var batteryStatus: Intent?=null
     private val broadcastReceiver=object:BroadcastReceiver(){
@@ -85,7 +81,7 @@ class MainActivity : AppCompatActivity() {
         override fun run() {
             sb.clear()
             sb.append(batteryStatus?.getIntExtra(BatteryManager.EXTRA_VOLTAGE, -1))
-            sb.append("V")
+            sb.append("mV")
             batteryVoltage.text = sb.toString()
             val num: Int = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW)
             val tmp: Int = -num / 1000
@@ -96,17 +92,15 @@ class MainActivity : AppCompatActivity() {
             Handler(Looper.getMainLooper()).postDelayed(this, 1000)
         }
     }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-//        test.setBackgroundColor(resources.getColor(R.color.colorGraphLine))
-    //    quickUpdate.start()
+        //    quickUpdate.start()
 
         initialize()
     }
     override fun onResume() {
-    //    quickUpdate.start()
+        //    quickUpdate.start()
         super.onResume()
         Handler(Looper.getMainLooper()).postDelayed(runnable,1000)
         registerReceiver(broadcastReceiver, IntentFilter(BatteryMonitorService.UPDATE_FLAG))
@@ -118,25 +112,25 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
     }
     override fun onPause() {
-    //    this.quickUpdate.cancel()
+        //    this.quickUpdate.cancel()
         Handler(Looper.getMainLooper()).removeCallbacksAndMessages(runnable)
         super.onPause()
     }
     override fun onRequestPermissionsResult(requestCode: Int, permission: Array<String>,grantResults: IntArray) = when {
-            requestCode != READ_REQUEST_CODE -> super.onRequestPermissionsResult(requestCode, permission, grantResults)
-            grantResults[0] != 0 -> requestPermissions(
-                this,
-                arrayOf(
-                    "android.permission.READ_EXTERNAL_STORAGE",
-                    "android.permission.WRITE_EXTERNAL_STORAGE"
-                ),
-                READ_REQUEST_CODE
-            )
-            else -> {
-                finish()
-                startActivity(intent)
-            }
+        requestCode != READ_REQUEST_CODE -> super.onRequestPermissionsResult(requestCode, permission, grantResults)
+        grantResults[0] != 0 -> requestPermissions(
+            this,
+            arrayOf(
+                "android.permission.READ_EXTERNAL_STORAGE",
+                "android.permission.WRITE_EXTERNAL_STORAGE"
+            ),
+            READ_REQUEST_CODE
+        )
+        else -> {
+            finish()
+            startActivity(intent)
         }
+    }
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         if (!checkPermissions())
             return false
@@ -162,25 +156,24 @@ class MainActivity : AppCompatActivity() {
                 } else
                     sb.append(dayOfMonth.toString())
 
-                val filesDir: File = this.filesDir
+                val filesDir: File = filesDir
                 val file = File(filesDir, "$sb-$monthNew-$year1.txt")
-                if (file.exists()) {
-                    this.drawChart(file)
+                watchingHistory=false
+                if (file.exists() && fileProviderService.currentFile(this).name !=file.name) {
                     watchingHistory=true
+                    drawChart(file)
                     watchCurrentData.visibility = View.VISIBLE
                 }
-                else{
+                else
                     warn(this,"No entry available",0)
-                    watchingHistory=false
-                }
 
             }, year, month, day)
-
+            dpd.datePicker.maxDate=System.currentTimeMillis()
             dpd.show()
         }
         return true
     }
-    fun viewHistory(it: View?) {
+    fun viewCurrent(it: View?) {
         watchCurrentData.visibility = View.GONE
         watchingHistory=false
         drawChart()
@@ -211,8 +204,13 @@ class MainActivity : AppCompatActivity() {
         logger(writePermission.toString())
         if (writePermission) {
             val parser = LogParser()
-            val name=file.name.replace(".txt","",true)
-            currentInstanceTextView.text=name
+            if(watchingHistory) {
+                val name = file.name.replace(".txt", "", true)
+                currentInstanceTextView.text = name
+            }
+            else
+                currentInstanceTextView.text = "Today"
+
             try {
                 val rawDataList = parser.read(file)
                 val stats=Stats()
@@ -225,7 +223,7 @@ class MainActivity : AppCompatActivity() {
                         entries.add(Entry(((i.hh * 60) + i.mm).toFloat(),  i.level.toFloat()))
                     }
                     try {
-                            val size = averageLevel / rawDataList.size
+                        val size = averageLevel / rawDataList.size
 //                            display average battery level
                     } catch ( e:ArithmeticException) {
                         e.printStackTrace()
@@ -248,15 +246,15 @@ class MainActivity : AppCompatActivity() {
                     yAxis.setDrawGridLines(true)
                     yAxis.gridColor = ContextCompat.getColor(this,R.color.colorGraphGrid)
                     val yAxisRight = chart.axisRight
-                    yAxisRight.isEnabled = false;
+                    yAxisRight.isEnabled = false
                     val xAxis = chart.xAxis
                     xAxis.setDrawLabels(false)
                     chart.data = lineData
-                    xAxis.setDrawGridLines(false);
-                    chart.invalidate();
+                    xAxis.setDrawGridLines(false)
+                    chart.invalidate()
                 }
             } catch (e: IOException) {
-                e.printStackTrace();
+                e.printStackTrace()
                 error( this, "MainActivity.drawChart() \ncannot read from " + file.name.toString(), 0)
             } catch (e: NoSuchElementException) {
                 e.printStackTrace()
@@ -276,13 +274,13 @@ class MainActivity : AppCompatActivity() {
         return permissionRead == 0 && permissionWrite == 0
     }
     private fun requestPermissions() {
-            requestPermissions(
-                this,
-                arrayOf(
-                    "android.permission.READ_EXTERNAL_STORAGE",
-                    "android.permission.WRITE_EXTERNAL_STORAGE"
-                ),
-                READ_REQUEST_CODE
-            )
+        requestPermissions(
+            this,
+            arrayOf(
+                "android.permission.READ_EXTERNAL_STORAGE",
+                "android.permission.WRITE_EXTERNAL_STORAGE"
+            ),
+            READ_REQUEST_CODE
+        )
     }
 }

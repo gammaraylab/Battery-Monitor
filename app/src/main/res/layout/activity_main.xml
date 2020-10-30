@@ -31,7 +31,7 @@
         <Button
             android:id="@+id/watchCurrentData"
             android:visibility="gone"
-            android:onClick="viewHistory"
+            android:onClick="viewCurrent"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/watch_current_data"

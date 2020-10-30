@@ -11,8 +11,8 @@ class BatteryLevelMarker(context: Context?, layoutResource: Int) :
     MarkerView(context, layoutResource) {
 
     override fun refreshContent(e: Entry?, highlight: Highlight?) {
-        var minutes: String=""
-        var time: String=""
+        var minutes=""
+        var time=""
         val level = e?.y?.toInt()
         val tmp = e?.x?.toInt()
         if (tmp != null) {
@@ -48,8 +48,8 @@ class BatteryLevelMarker(context: Context?, layoutResource: Int) :
 
     override fun getOffsetForDrawingAtPoint(posX: Float, posY: Float): MPPointF {
         return MPPointF(
-            (-getWidth()).toFloat() / 2.0f,
-            (-getHeight()).toFloat() - 10.0f
+            (-width).toFloat() / 2.0f,
+            (-height).toFloat() - 10.0f
         )
     }
 }

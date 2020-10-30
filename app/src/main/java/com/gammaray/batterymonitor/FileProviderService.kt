@@ -2,11 +2,10 @@ package com.gammaray.batterymonitor
 
 import android.content.Context
 import java.io.File
-import java.text.DateFormat
 import java.text.SimpleDateFormat
 import java.util.*
 
- class FileProviderService {
+class FileProviderService {
     private val dateFormat: SimpleDateFormat= SimpleDateFormat("dd-MMM-yy",Locale.US)
     fun currentFile(context: Context): File {
         val filesDir = context.filesDir
