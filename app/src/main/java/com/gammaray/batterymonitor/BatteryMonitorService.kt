@@ -4,6 +4,8 @@ import android.app.*
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.os.*
 import androidx.core.app.NotificationCompat
 import java.io.File
@@ -110,10 +112,12 @@ class BatteryMonitorService : Service() {
     }
 
     private fun addNotification(): NotificationCompat.Builder {
+        val icon=BitmapFactory.decodeResource(resources,R.drawable.notification_icon)
         val notificationBuilder2 =
             NotificationCompat.Builder(this, "com.gammaray.batterymonitor.notification_id")
                 .setContentTitle("Battery monitor").setContentText("service running")
-                .setSmallIcon(R.drawable.ic_notification_small)
+                .setSmallIcon(R.drawable.notification_icon)
+                .setLargeIcon(icon)
         notificationBuilder2.setContentIntent(
             PendingIntent.getActivity(
                 this, 0, Intent(
