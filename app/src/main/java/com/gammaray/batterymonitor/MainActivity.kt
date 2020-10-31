@@ -63,7 +63,7 @@ class MainActivity : AppCompatActivity() {
         instance = this
     }
     private val monthList = arrayOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
-    var watchingHistory = false
+    private var watchingHistory = false
     private var writePermission = false
     private lateinit var batteryManager: BatteryManager
     private var batteryStatus: Intent?=null
@@ -73,7 +73,6 @@ class MainActivity : AppCompatActivity() {
                 drawChart()
         }
     }
-    private lateinit var lineData: LineData
     private val fileProviderService = FileProviderService()
     //private val quickUpdate=//
     private val sb = StringBuilder()
@@ -189,7 +188,18 @@ class MainActivity : AppCompatActivity() {
         batteryStatus = registerReceiver(null,IntentFilter(Intent.ACTION_BATTERY_CHANGED))
         batteryManager = getSystemService(Context.BATTERY_SERVICE) as BatteryManager
         chart.setDrawGridBackground(false)
-        chart.marker = BatteryLevelMarker(this, R.layout.marker_view) //marker
+        chart.marker = BatteryLevelMarker(this, R.layout.marker_view)
+        val yAxis:YAxis = chart.axisLeft
+        yAxis.granularity = 10.0f
+        yAxis.setDrawGridLines(true)
+        yAxis.gridColor = ContextCompat.getColor(this,R.color.colorGraphGrid)
+        val yAxisRight = chart.axisRight
+        yAxisRight.isEnabled = false
+        val yAxisLeft=chart.axisLeft
+//        yAxisLeft.isEnabled=true
+        val xAxis = chart.xAxis
+        xAxis.setDrawLabels(false)
+        xAxis.setDrawGridLines(false)
         if (checkPermissions()) {
             startService(Intent(this, BatteryMonitorService::class.java))
             writePermission = true
@@ -207,9 +217,12 @@ class MainActivity : AppCompatActivity() {
             if(watchingHistory) {
                 val name = file.name.replace(".txt", "", true)
                 currentInstanceTextView.text = name
+                statsPanelLayout.visibility=View.GONE
             }
-            else
+            else{
                 currentInstanceTextView.text = "Today"
+                statsPanelLayout.visibility=View.VISIBLE
+            }
 
             try {
                 val rawDataList = parser.read(file)
@@ -233,24 +246,8 @@ class MainActivity : AppCompatActivity() {
                     sb.append("%")
                     batteryLevel.text = sb
                     val dataSet = LineDataSet(entries, "Battery level")
-                    dataSet.lineWidth = 1.0f
-                    dataSet.setDrawValues(false)
-                    dataSet.setDrawCircles(false)
-                    dataSet.setDrawFilled(true)
-                    dataSet.fillColor =ContextCompat.getColor(this,R.color.colorFillGraph)
-                    dataSet.color =ContextCompat.getColor(this,R.color.colorGraphLine)
-                    dataSet.mode = LineDataSet.Mode.LINEAR
-                    lineData = LineData(dataSet)
-                    val yAxis:YAxis = chart.axisLeft
-                    yAxis.granularity = 10.0f
-                    yAxis.setDrawGridLines(true)
-                    yAxis.gridColor = ContextCompat.getColor(this,R.color.colorGraphGrid)
-                    val yAxisRight = chart.axisRight
-                    yAxisRight.isEnabled = false
-                    val xAxis = chart.xAxis
-                    xAxis.setDrawLabels(false)
-                    chart.data = lineData
-                    xAxis.setDrawGridLines(false)
+                    dataSet.init()
+                    chart.data =LineData(dataSet)
                     chart.invalidate()
                 }
             } catch (e: IOException) {
@@ -266,6 +263,15 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+    private fun LineDataSet.init(){
+        this.lineWidth = 1.0f
+        this.setDrawValues(false)
+        this.setDrawCircles(false)
+        this.setDrawFilled(true)
+        this.fillColor =ContextCompat.getColor(this@MainActivity,R.color.colorFillGraph)
+        this.color =ContextCompat.getColor(this@MainActivity,R.color.colorGraphLine)
+        this.mode = LineDataSet.Mode.LINEAR
+    }
     private fun checkPermissions(): Boolean {
         val permissionRead =
             ContextCompat.checkSelfPermission(this, "android.permission.READ_EXTERNAL_STORAGE")
@@ -280,7 +286,6 @@ class MainActivity : AppCompatActivity() {
                 "android.permission.READ_EXTERNAL_STORAGE",
                 "android.permission.WRITE_EXTERNAL_STORAGE"
             ),
-            READ_REQUEST_CODE
-        )
+            READ_REQUEST_CODE)
     }
 }
