@@ -4,7 +4,6 @@ import android.app.*
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.*
 import androidx.core.app.NotificationCompat
@@ -27,7 +26,6 @@ class BatteryMonitorService : Service() {
         override fun run() {
             Handler(Looper.getMainLooper()).postDelayed(this,delay)
             updateEntry(this@BatteryMonitorService)
-//            MainActivity.success(this@BatteryMonitorService,"running",0)
         }
     }
 
@@ -54,7 +52,6 @@ class BatteryMonitorService : Service() {
             val i = NOTIFICATION_ID
             val builder = notificationBuilder
             notificationManager2.notify(i, builder.build())
-//            handler.post(runnable)
             Handler(Looper.getMainLooper()).postDelayed({runnable
             },delay)
     }
@@ -112,21 +109,13 @@ class BatteryMonitorService : Service() {
     }
 
     private fun addNotification(): NotificationCompat.Builder {
-        val icon=BitmapFactory.decodeResource(resources,R.drawable.notification_icon)
-        val notificationBuilder2 =
-            NotificationCompat.Builder(this, "com.gammaray.batterymonitor.notification_id")
-                .setContentTitle("Battery monitor").setContentText("service running")
-                .setSmallIcon(R.drawable.notification_icon)
-                .setLargeIcon(icon)
-        notificationBuilder2.setContentIntent(
-            PendingIntent.getActivity(
-                this, 0, Intent(
-                    this,
-                    MainActivity::class.java
-                ), 0
-            )
-        )
-        return notificationBuilder2
+        val icon=BitmapFactory.decodeResource(resources,R.drawable.notification_icon_large)
+        return NotificationCompat.Builder(this, "com.gammaray.batterymonitor.notification_id")
+            .setContentTitle("Battery monitor")
+            .setContentText("service running")
+            .setSmallIcon(R.drawable.notification_icon_small)
+            .setLargeIcon(icon)
+            .setContentIntent(PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java), 0))
     }
 
     private fun createNotificationChannel() {

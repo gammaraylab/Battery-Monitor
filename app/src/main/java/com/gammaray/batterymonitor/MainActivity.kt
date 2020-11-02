@@ -195,8 +195,6 @@ class MainActivity : AppCompatActivity() {
         yAxis.gridColor = ContextCompat.getColor(this,R.color.colorGraphGrid)
         val yAxisRight = chart.axisRight
         yAxisRight.isEnabled = false
-        val yAxisLeft=chart.axisLeft
-//        yAxisLeft.isEnabled=true
         val xAxis = chart.xAxis
         xAxis.setDrawLabels(false)
         xAxis.setDrawGridLines(false)
