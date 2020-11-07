@@ -32,7 +32,7 @@ import kotlin.jvm.internal.Intrinsics
 class MainActivity : AppCompatActivity() {
     companion object {
         const val READ_REQUEST_CODE = 45
-        var instance: MainActivity? = null
+        lateinit var instance: MainActivity
         var writePermission: Boolean=false
         fun errorHandler(site: String?, error: String) {
             Log.e(site, error)
@@ -64,7 +64,7 @@ class MainActivity : AppCompatActivity() {
     }
     private val monthList = arrayOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
     private var watchingHistory = false
-    private var writePermission = false
+//    private var writePermission = false
     private lateinit var batteryManager: BatteryManager
     private var batteryStatus: Intent?=null
     private val broadcastReceiver=object:BroadcastReceiver(){
@@ -101,8 +101,8 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         //    quickUpdate.start()
         super.onResume()
-        Handler(Looper.getMainLooper()).postDelayed(runnable,1000)
         registerReceiver(broadcastReceiver, IntentFilter(BatteryMonitorService.UPDATE_FLAG))
+        Handler(Looper.getMainLooper()).postDelayed(runnable,1000)
         if (!watchingHistory)
             drawChart()
     }
@@ -117,14 +117,7 @@ class MainActivity : AppCompatActivity() {
     }
     override fun onRequestPermissionsResult(requestCode: Int, permission: Array<String>,grantResults: IntArray) = when {
         requestCode != READ_REQUEST_CODE -> super.onRequestPermissionsResult(requestCode, permission, grantResults)
-        grantResults[0] != 0 -> requestPermissions(
-            this,
-            arrayOf(
-                "android.permission.READ_EXTERNAL_STORAGE",
-                "android.permission.WRITE_EXTERNAL_STORAGE"
-            ),
-            READ_REQUEST_CODE
-        )
+        grantResults[0] != 0 -> requestPermissions()
         else -> {
             finish()
             startActivity(intent)
@@ -153,19 +146,20 @@ class MainActivity : AppCompatActivity() {
                     sb.append('0')
                     sb.append(dayOfMonth)
                 } else
-                    sb.append(dayOfMonth.toString())
+                    sb.append(dayOfMonth)
 
                 val filesDir: File = filesDir
-                val file = File(filesDir, "$sb-$monthNew-$year1.txt")
+                val file = File(filesDir, "$sb-$monthNew-${year1%100}.txt")
                 watchingHistory=false
-                if (file.exists() && fileProviderService.currentFile(this).name !=file.name) {
-                    watchingHistory=true
-                    drawChart(file)
-                    watchCurrentData.visibility = View.VISIBLE
-                }
-                else
-                    warn(this,"No entry available",0)
+                if(fileProviderService.currentFile(this).name !=file.name) {
+                    if (file.exists()) {
+                        watchingHistory = true
+                        drawChart(file)
+                        watchCurrentData.visibility = View.VISIBLE
+                    } else
+                        warn(this, "No data present", 0)
 
+                }
             }, year, month, day)
             dpd.datePicker.maxDate=System.currentTimeMillis()
             dpd.show()
@@ -183,10 +177,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun initialize() {
-        Handler(Looper.getMainLooper()).postDelayed(runnable,1000)
-        registerReceiver(broadcastReceiver, IntentFilter(BatteryMonitorService.UPDATE_FLAG))
         batteryStatus = registerReceiver(null,IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+        registerReceiver(broadcastReceiver, IntentFilter(BatteryMonitorService.UPDATE_FLAG))
+        Handler(Looper.getMainLooper()).postDelayed(runnable,1000)
         batteryManager = getSystemService(Context.BATTERY_SERVICE) as BatteryManager
+
         chart.setDrawGridBackground(false)
         chart.marker = BatteryLevelMarker(this, R.layout.marker_view)
         val yAxis:YAxis = chart.axisLeft
@@ -198,6 +193,7 @@ class MainActivity : AppCompatActivity() {
         val xAxis = chart.xAxis
         xAxis.setDrawLabels(false)
         xAxis.setDrawGridLines(false)
+
         if (checkPermissions()) {
             startService(Intent(this, BatteryMonitorService::class.java))
             writePermission = true
@@ -209,7 +205,6 @@ class MainActivity : AppCompatActivity() {
         requestPermissions()
     }
     private fun drawChart(file:File = fileProviderService.currentFile(this)) {
-        logger(writePermission.toString())
         if (writePermission) {
             val parser = LogParser()
             if(watchingHistory) {
@@ -218,13 +213,15 @@ class MainActivity : AppCompatActivity() {
                 statsPanelLayout.visibility=View.GONE
             }
             else{
-                currentInstanceTextView.text = "Today"
+                sb.clear()
+                sb.append("Today")
+                currentInstanceTextView.text = sb
                 statsPanelLayout.visibility=View.VISIBLE
             }
 
             try {
                 val rawDataList = parser.read(file)
-                val stats=Stats()
+//                val stats=Stats()
 //                stats.calculateStats(rawDataList)
                 val entries = ArrayList<Entry>()
                 if (rawDataList.isNotEmpty()) {
@@ -277,6 +274,7 @@ class MainActivity : AppCompatActivity() {
             ContextCompat.checkSelfPermission(this, "android.permission.WRITE_EXTERNAL_STORAGE")
         return permissionRead == 0 && permissionWrite == 0
     }
+
     private fun requestPermissions() {
         requestPermissions(
             this,

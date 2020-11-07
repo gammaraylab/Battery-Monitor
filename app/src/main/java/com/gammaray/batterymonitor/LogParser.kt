@@ -9,7 +9,6 @@ class LogParser {
     fun read(file: File): ArrayList<Data> {
         var i: Int
         var i2: Int
-        Intrinsics.checkParameterIsNotNull(file, "file")
         val dataList = ArrayList<Data>()
         try {
             val str: String =file.readText()
@@ -87,7 +86,7 @@ class LogParser {
         try {
             file.appendText(
                 "$hh:$mm:$level#")
-            if (file.length() > 20000.toLong())
+            if (file.length() > 51200.toLong())
                 file.writeText("")
         } catch (e: IOException) {
             e.printStackTrace()

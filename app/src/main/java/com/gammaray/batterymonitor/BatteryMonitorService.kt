@@ -6,8 +6,10 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.BitmapFactory
 import android.os.*
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import java.io.File
+import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -49,9 +51,8 @@ class BatteryMonitorService : Service() {
         val systemService: Any = getSystemService(Context.NOTIFICATION_SERVICE)
             notificationManager = systemService as NotificationManager
             val notificationManager2 = notificationManager
-            val i = NOTIFICATION_ID
             val builder = notificationBuilder
-            notificationManager2.notify(i, builder.build())
+            notificationManager2.notify(NOTIFICATION_ID, builder.build())
             Handler(Looper.getMainLooper()).postDelayed({runnable
             },delay)
     }
@@ -98,6 +99,20 @@ class BatteryMonitorService : Service() {
     fun updateEntry(context: Context) {
         val file: File = fileProviderService.currentFile(context)
         val level = batteryLevel(context)
+        if(tmpLevel<0){
+            if(file.exists() && file.length()>0){
+                val sb=StringBuilder()
+                val line=file.readText().subSequence(file.length().toInt()-4,file.length().toInt()-1).reversed()
+//                Log.e("TAG","${line}  xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+                for(i in line){
+                    if(i==':')
+                        break
+                    sb.append(i)
+                }
+//                Log.e("TAG","${line.length} - ${sb.reverse().toString().toInt()} vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv")
+                tmpLevel=sb.toString().toInt()
+            }
+        }
         if (level != tmpLevel && level > 0) {
             tmpLevel = level
             val hh: String = hourFormat.format(Date())
