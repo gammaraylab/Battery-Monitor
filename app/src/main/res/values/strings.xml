@@ -2,8 +2,13 @@
     <string name="app_name">Battery Monitor</string>
     <string name="today">Today</string>
     <string name="watch_current_data">Watch current data</string>
-    <string name="battery_level">Battery level=</string>
+    <string name="battery_level">Battery level</string>
     <string name="unknown">unknown</string>
-    <string name="battery_voltage">Battery Voltage=</string>
-    <string name="instantaneous_current">instantaneous current=</string>
+    <string name="battery_voltage">Battery Voltage</string>
+    <string name="instantaneous_current">instantaneous current</string>
+    <string name="full_in">Full in</string>
+    <string name="empty_in">Empty in</string>
+    <string name="battery_health">Battery health</string>
+    <string name="last_changed_at">Last changed at</string>
+
 </resources>

@@ -34,27 +34,28 @@ class MainActivity : AppCompatActivity() {
         const val READ_REQUEST_CODE = 45
         lateinit var instance: MainActivity
         var writePermission: Boolean=false
+        var isCharging=false
         fun errorHandler(site: String?, error: String) {
             Log.e(site, error)
             Toast.makeText(instance, error, Toast.LENGTH_SHORT).show()
         }
 
-        fun logger(message: String, tag: String="Testing") {
+        fun log(message: String, tag: String = "Testing") {
             Log.e(tag, message)
         }
 
-        fun error(instance: Context, message: String, length: Int=Toasty.LENGTH_SHORT) {
+        fun error(message: String, length: Int = Toasty.LENGTH_SHORT) {
             Log.e("ERROR", message)
             Toasty.error(instance, message, length).show()
         }
 
-        fun warn(instance: Context, message: String, length: Int=Toasty.LENGTH_SHORT) {
+        fun warn(message: String, length: Int = Toasty.LENGTH_SHORT) {
             Intrinsics.checkParameterIsNotNull(message, "message")
             Log.e("WARNING", message)
             Toasty.warning(instance, message, length).show()
         }
 
-        fun success(instance: Context, message: String, length: Int=Toasty.LENGTH_SHORT) {
+        fun success(/*instance: Context,*/ message: String, length: Int = Toasty.LENGTH_SHORT) {
             Log.e("SUCCESS", message)
             Toasty.success(instance, message, length).show()
         }
@@ -62,11 +63,26 @@ class MainActivity : AppCompatActivity() {
     init {
         instance = this
     }
-    private val monthList = arrayOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+    private val stats=Stats()
+    private val monthList = arrayOf(
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec"
+    )
     private var watchingHistory = false
 //    private var writePermission = false
     private lateinit var batteryManager: BatteryManager
     private var batteryStatus: Intent?=null
+    private var status=0
     private val broadcastReceiver=object:BroadcastReceiver(){
         override fun onReceive(context: Context?, intent: Intent?) {
             if (!watchingHistory)
@@ -102,7 +118,7 @@ class MainActivity : AppCompatActivity() {
         //    quickUpdate.start()
         super.onResume()
         registerReceiver(broadcastReceiver, IntentFilter(BatteryMonitorService.UPDATE_FLAG))
-        Handler(Looper.getMainLooper()).postDelayed(runnable,1000)
+        Handler(Looper.getMainLooper()).postDelayed(runnable, 1000)
         if (!watchingHistory)
             drawChart()
     }
@@ -115,8 +131,16 @@ class MainActivity : AppCompatActivity() {
         Handler(Looper.getMainLooper()).removeCallbacksAndMessages(runnable)
         super.onPause()
     }
-    override fun onRequestPermissionsResult(requestCode: Int, permission: Array<String>,grantResults: IntArray) = when {
-        requestCode != READ_REQUEST_CODE -> super.onRequestPermissionsResult(requestCode, permission, grantResults)
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permission: Array<String>,
+        grantResults: IntArray
+    ) = when {
+        requestCode != READ_REQUEST_CODE -> super.onRequestPermissionsResult(
+            requestCode,
+            permission,
+            grantResults
+        )
         grantResults[0] != 0 -> requestPermissions()
         else -> {
             finish()
@@ -149,15 +173,15 @@ class MainActivity : AppCompatActivity() {
                     sb.append(dayOfMonth)
 
                 val filesDir: File = filesDir
-                val file = File(filesDir, "$sb-$monthNew-${year1%100}.txt")
-                watchingHistory=false
-                if(fileProviderService.currentFile(this).name !=file.name) {
+                val file = File(filesDir, "$sb-$monthNew-${year1 % 100}.txt")
+                watchingHistory = false
+                if (fileProviderService.currentFile(this).name != file.name) {
                     if (file.exists()) {
                         watchingHistory = true
                         drawChart(file)
                         watchCurrentData.visibility = View.VISIBLE
                     } else
-                        warn(this, "No data present", 0)
+                        warn(/*this, */"No data present")
 
                 }
             }, year, month, day)
@@ -177,9 +201,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun initialize() {
-        batteryStatus = registerReceiver(null,IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+        batteryStatus = registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
         registerReceiver(broadcastReceiver, IntentFilter(BatteryMonitorService.UPDATE_FLAG))
-        Handler(Looper.getMainLooper()).postDelayed(runnable,1000)
+        Handler(Looper.getMainLooper()).postDelayed(runnable, 1000)
         batteryManager = getSystemService(Context.BATTERY_SERVICE) as BatteryManager
 
         chart.setDrawGridBackground(false)
@@ -187,7 +211,7 @@ class MainActivity : AppCompatActivity() {
         val yAxis:YAxis = chart.axisLeft
         yAxis.granularity = 10.0f
         yAxis.setDrawGridLines(true)
-        yAxis.gridColor = ContextCompat.getColor(this,R.color.colorGraphGrid)
+        yAxis.gridColor = ContextCompat.getColor(this, R.color.colorGraphGrid)
         val yAxisRight = chart.axisRight
         yAxisRight.isEnabled = false
         val xAxis = chart.xAxis
@@ -201,16 +225,16 @@ class MainActivity : AppCompatActivity() {
                 drawChart()
             return
         }
-        error( this, "give storage access",0)
+        error( /*this,*/ "give storage access")
         requestPermissions()
     }
-    private fun drawChart(file:File = fileProviderService.currentFile(this)) {
+    private fun drawChart(file: File = fileProviderService.currentFile(this)) {
         if (writePermission) {
             val parser = LogParser()
             if(watchingHistory) {
                 val name = file.name.replace(".txt", "", true)
                 currentInstanceTextView.text = name
-                statsPanelLayout.visibility=View.GONE
+//                statsPanelLayout.visibility=View.GONE
             }
             else{
                 sb.clear()
@@ -220,20 +244,33 @@ class MainActivity : AppCompatActivity() {
             }
 
             try {
-                val rawDataList = parser.read(file)
-//                val stats=Stats()
-//                stats.calculateStats(rawDataList)
+                val rawDataList = ArrayList<Data>()
+                val temp = parser.read(file)
+                val n=temp.size
+                for (i in 0 until n - 1)
+                    if (temp[i].level != temp[i + 1].level)
+                        rawDataList.add(temp[i])
+                rawDataList.add(temp[n - 1])
+
+                stats.updateStats(rawDataList)
+                status=batteryStatus?.getIntExtra(BatteryManager.EXTRA_STATUS, -1) ?: -1
+                isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING
+                timeLeftUntilFull.text = stats.timeTillFull(isCharging)
+                timeLeftUntilEmpty.text = stats.timeTillEmpty(isCharging)
+                lastChanged.text = stats.timeSinceLastChanged()
+                batteryHealth.text = stats.batteryHealth()
+
                 val entries = ArrayList<Entry>()
                 if (rawDataList.isNotEmpty()) {
                     var averageLevel = 0
                     for(i in rawDataList){
                         averageLevel+=i.level
-                        entries.add(Entry(((i.hh * 60) + i.mm).toFloat(),  i.level.toFloat()))
+                        entries.add(Entry(((i.hh * 60) + i.mm).toFloat(), i.level.toFloat()))
                     }
                     try {
                         val size = averageLevel / rawDataList.size
 //                            display average battery level
-                    } catch ( e:ArithmeticException) {
+                    } catch (e: ArithmeticException) {
                         e.printStackTrace()
                     }
                     sb.clear()
@@ -247,14 +284,16 @@ class MainActivity : AppCompatActivity() {
                 }
             } catch (e: IOException) {
                 e.printStackTrace()
-                error( this, "MainActivity.drawChart() \ncannot read from " + file.name.toString(), 0)
+                error(/* this,*/ "MainActivity.drawChart() \ncannot read from " + file.name.toString())
             } catch (e: NoSuchElementException) {
                 e.printStackTrace()
                 sb.clear()
                 sb.append("not calculated yet")
                 batteryVoltage.text=sb
                 batteryLevel.text=sb
-                error( this, "No Entry present in the system", 0)
+                error( /*this,*/ "No Entry present in the system")
+            }catch (e:ArrayIndexOutOfBoundsException){
+                e.printStackTrace()
             }
         }
     }
@@ -263,8 +302,8 @@ class MainActivity : AppCompatActivity() {
         this.setDrawValues(false)
         this.setDrawCircles(false)
         this.setDrawFilled(true)
-        this.fillColor =ContextCompat.getColor(this@MainActivity,R.color.colorFillGraph)
-        this.color =ContextCompat.getColor(this@MainActivity,R.color.colorGraphLine)
+        this.fillColor =ContextCompat.getColor(this@MainActivity, R.color.colorFillGraph)
+        this.color =ContextCompat.getColor(this@MainActivity, R.color.colorGraphLine)
         this.mode = LineDataSet.Mode.LINEAR
     }
     private fun checkPermissions(): Boolean {
@@ -282,6 +321,7 @@ class MainActivity : AppCompatActivity() {
                 "android.permission.READ_EXTERNAL_STORAGE",
                 "android.permission.WRITE_EXTERNAL_STORAGE"
             ),
-            READ_REQUEST_CODE)
+            READ_REQUEST_CODE
+        )
     }
 }

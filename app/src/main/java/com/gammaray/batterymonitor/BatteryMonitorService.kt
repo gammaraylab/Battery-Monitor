@@ -16,7 +16,7 @@ import java.util.*
 class BatteryMonitorService : Service() {
     private val NOTIFICATION_ID = 415
     private val broadcastReceiver =BroadcastReceiver()
-    private val delay:Long = 60000
+    private val delay:Long = 20000
     private val fileProviderService = FileProviderService()
     private val hourFormat: SimpleDateFormat = SimpleDateFormat("HH", Locale.US)
     private val minuteFormat: SimpleDateFormat = SimpleDateFormat("mm", Locale.US)

@@ -1,73 +1,123 @@
 package com.gammaray.batterymonitor
 
+import java.io.File
 import java.util.*
 import kotlin.collections.ArrayList
 
 class Stats {
-    fun timeTillFull(rawData: ArrayList<StatDataModel>): String {
-        if(rawData.isEmpty())
-            return "empty"
-        val rate: Double = rawData.last().rate()
-    val sb = StringBuilder()
-        sb.append((60.0 * rate / rawData.size.toDouble()).format())
-        sb.append("%per hour")
-        return "Calculating"
+    private lateinit var chargingData:ArrayList<StatDataModel>
+    private lateinit var dischargingData:ArrayList<StatDataModel>
+    private lateinit var statFile: File
+    fun timeTillFull(isCharging:Boolean): String {
+        if(!isCharging)
+            return "phone is not charging"
+        if(chargingData.isEmpty())
+            return "calculating"
+        var avgRate=0.0
+        for(i in chargingData)
+            avgRate+=i.rate()
+        MainActivity.log("charging $avgRate")
+        avgRate /= chargingData.size.toDouble()
+        MainActivity.log("charging2 $avgRate")
+        val time=-(100.0-chargingData.last().endLevel.toDouble())/avgRate
+        var hours=(time/60).toInt().toString()
+        var minutes=(time%60).toInt().toString()
+
+        if(hours.length==1)
+            hours="0$hours"
+        if(minutes.length==1)
+            minutes="0$minutes"
+
+        return "$hours h:$minutes m"
     }
-    fun timeTillEmpty(rawData: ArrayList<StatDataModel>): String {
-        return "Calculating"
+    fun timeTillEmpty(isCharging:Boolean): String {
+        if(isCharging)
+            return "phone is charging"
+        if(dischargingData.isEmpty())
+            return "calculating"
+        var avgRate=0.0
+        for(i in dischargingData)
+            avgRate+=i.rate()
+        MainActivity.log("discharging $avgRate")
+        avgRate /= dischargingData.size.toDouble()
+        MainActivity.log("discharging2 $avgRate")
+        val currentRate=dischargingData.last().rate()
+        if(currentRate>avgRate)
+            avgRate=currentRate
+        val time=-(100.0-dischargingData.last().endLevel.toDouble())/avgRate
+        var hours=(time/60).toInt().toString()
+        var minutes=(time%60).toInt().toString()
+
+        if(hours.length==1)
+            hours="0$hours"
+        if(minutes.length==1)
+            minutes="0$minutes"
+
+        return "$hours h:$minutes m"
     }
     fun timeSinceLastChanged(): String {
-        return "Calculating"
+        if(dischargingData.isEmpty())
+            return "calculating"
+        val time=dischargingData.last().startTime
+        var minutes=(time%60).toString()
+        var hours=(time/60).toString()
+
+        if(hours.length==1)
+            hours="0$hours"
+        if(minutes.length==1)
+            minutes="0$minutes"
+
+        return "$hours:$minutes"
     }
+
     fun batteryHealth(): String {
         return "100%"
     }
-    fun calculateStats(rawData: ArrayList<Data>) {
+    fun updateStats(rawData: ArrayList<Data>) {
         val charge = ArrayList<StatDataModel>()
         val discharge = ArrayList<StatDataModel>()
         val data = StatDataModel()
-        val mx = Vector<Int>()
-        val mn = Vector<Int>()
-        if(rawData.isEmpty())
+        val n: Int = rawData.size
+        if(n<2) //IF ENTRIES ARE LESS THAN 2 THEN WE CANNOT CALCULATE THE STATS
             return
         try {
-            val n: Int = rawData.size
             var isCharging = true
-            if (rawData[0].level > rawData[1].level) {
-                isCharging = false
+            var first:Int
+            val mx = Vector<Int>()
+            val mn = Vector<Int>()
+            if (rawData[0].level > rawData[1].level){
+                isCharging=false
                 mx.add(0)
-            } else if (rawData[0].level< rawData[1].level)
+            }
+            else if (rawData[0].level < rawData[1].level)
                 mn.add(0)
-
-            val i = n - 1
-            for (i2 in 1 until i) {
-                if (rawData[i2 - 1].level > rawData[i2].level && rawData[i2]
-                        .level< rawData[i2 + 1].level)
-                    mn.add(Integer.valueOf(i2))
-                else if (rawData[i2 - 1].level < rawData[i2]
-                        .level && rawData[i2].level > rawData[i2 + 1].level)
-                    mx.add(Integer.valueOf(i2))
+            for (i in 1 until n - 1) {
+                if (rawData[i - 1].level > rawData[i].level && rawData[i].level < rawData[i + 1].level)
+                    mn.add(i)
+                else if (rawData[i - 1].level < rawData[i].level && rawData[i].level > rawData[i + 1].level)
+                    mx.add(i)
             }
             if (rawData[n - 1].level > rawData[n - 2].level)
-                mx.add(Integer.valueOf(n - 1))
+                mx.add(n - 1)
             else if (rawData[n - 1].level < rawData[n - 2].level)
-                mn.add(Integer.valueOf(n - 1))
-            var first:Int
+                mn.add(n - 1)
+
             while (mx.isNotEmpty() && mn.isNotEmpty()) {
                 if (isCharging) {
                     first= mn.firstElement()
                     data.startLevel=(rawData[first].level)
                     data.startTime=(rawData[first].hh * 60 + rawData[first].mm)
-                    mn.remove(0)
+                    mn.removeAt(0)
                     first= mx.firstElement()
                     data.endLevel=(rawData[first].level)
                     data.endTime=(rawData[first].hh * 60 + rawData[first].mm)
                     charge.add(data)
-                } else {
+                }
+                else {
                     first= mx.firstElement()
                     data.startLevel=(rawData[first].level)
                     data.startTime=(rawData[first].hh* 60 + rawData[first].mm)
-                    mx.remove(0)
+                    mx.removeAt(0)
                     first= mn.firstElement()
                     data.endLevel=(rawData[first].level)
                     data.endTime=(rawData[first].hh * 60 + rawData[first].mm)
@@ -75,29 +125,35 @@ class Stats {
                 }
                 isCharging = !isCharging
             }
-            timeTillFull(charge)
-            timeTillEmpty(discharge)
+            chargingData=charge
+            dischargingData=discharge
         } catch (e: NoSuchElementException) {
             e.printStackTrace()
-        } catch (e2: IndexOutOfBoundsException) {
-            e2.printStackTrace()
+        } catch (e: IndexOutOfBoundsException) {
+            e.printStackTrace()
+        } catch (e: Exception){
+            e.printStackTrace()
         }
     }
-    private fun Double.format()= String.format("%.5G",this.toString())
-}
-class StatDataModel {
-    var endLevel:Int=0
-    var endTime=0
-    var startLevel=0
-    var startTime=0
 
-    fun levelChanged():Int {
+    private fun Double.format()= String.format("%.5G", this.toString())
+}
+class StatDataModel(
+    var startTime: Int = 0,
+    var endTime: Int = 0,
+    var startLevel: Int = 0,
+    var endLevel: Int = 0
+) {
+
+    private fun levelChanged():Int {
         return startLevel - endLevel
     }
-    fun timePassed():Int {
-        return startTime - endTime
+
+    private fun timePassed():Int {
+        return endTime-startTime
     }
+
     fun rate():Double {
-        return levelChanged().toDouble() / timePassed().toDouble();
+        return levelChanged().toDouble() / timePassed().toDouble()
     }
 }

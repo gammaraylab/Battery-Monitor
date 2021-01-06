@@ -1,85 +1,114 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<ScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:gravity="center_horizontal"
-    android:orientation="vertical"
-    android:padding="8dp"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintTop_toTopOf="parent">
-        <TextView
-            android:textAppearance="@style/TextAppearance.AppCompat.Display1"
-            android:textSize="18sp"
-            android:id="@+id/currentInstanceTextView"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/today" />
-
-        <com.github.mikephil.charting.charts.LineChart
-            android:id="@+id/chart"
-            android:layout_width="match_parent"
-            android:layout_height="250dp"
-            android:layout_marginTop="12dp"
-            />
-
-        <Button
-            android:id="@+id/watchCurrentData"
-            android:visibility="gone"
-            android:onClick="viewCurrent"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/watch_current_data"
-            android:textAllCaps="false"/>
-
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/statsPanelLayout"
+>
+    <LinearLayout
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:padding="8dp"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-    <TextView
-        android:id="@+id/textView"
-        android:text="@string/battery_level"
-        android:layout_marginStart="6dp"
+        android:layout_height="wrap_content"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        style="@style/statsTextStyle"/>
-    <TextView
-        android:textAppearance="@style/TextAppearance.AppCompat.Display1"
-        android:id="@+id/batteryLevel"
-        android:text="@string/unknown"
-        android:layout_marginStart="2dp"
-        app:layout_constraintStart_toEndOf="@+id/textView"
-        app:layout_constraintTop_toTopOf="parent"
-        style="@style/statsTextStyle"/>
-    <TextView
-        android:id="@+id/textView2"
-        android:text="@string/battery_voltage"
-        android:layout_marginStart="6dp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView"
-        style="@style/statsTextStyle"/>
-    <TextView android:textAppearance="@style/TextAppearance.AppCompat.Display1"
-        android:id="@+id/batteryVoltage"
-        android:text="@string/unknown"
-        android:layout_marginStart="2dp"
-        app:layout_constraintStart_toEndOf="@+id/textView2"
-        app:layout_constraintTop_toBottomOf="@+id/batteryLevel"
-        style="@style/statsTextStyle"/>
-    <TextView
-        android:id="@+id/textView3"
-        android:text="@string/instantaneous_current"
-        android:layout_marginStart="6dp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView2"
-        style="@style/statsTextStyle"/>
-    <TextView
-        android:textAppearance="@style/TextAppearance.AppCompat.Display1"
-        android:id="@+id/batteryCurrent"
-        android:text="@string/unknown"
-        android:layout_marginStart="2dp"
-        app:layout_constraintStart_toEndOf="@+id/textView3"
-        app:layout_constraintTop_toBottomOf="@+id/batteryVoltage"
-        style="@style/statsTextStyle"/>
-    </androidx.constraintlayout.widget.ConstraintLayout>
-</LinearLayout>
+        app:layout_constraintTop_toTopOf="parent">
+            <TextView
+                android:textAppearance="@style/TextAppearance.AppCompat.Display1"
+                android:textSize="18sp"
+                android:id="@+id/currentInstanceTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/today" />
+
+            <com.github.mikephil.charting.charts.LineChart
+                android:id="@+id/chart"
+                android:layout_width="match_parent"
+                android:layout_height="250dp"
+                android:layout_marginTop="12dp"
+                />
+
+            <Button
+                android:id="@+id/watchCurrentData"
+                android:visibility="gone"
+                android:onClick="viewCurrent"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/watch_current_data"
+                android:textAllCaps="false"/>
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/statsPanelLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+            <LinearLayout
+                android:id="@+id/linearLayout1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                >
+                <TextView
+                    android:text="@string/battery_level"
+                    style="@style/statsTextStyle"/>
+                <TextView
+                    android:text="@string/battery_voltage"
+                    style="@style/statsTextStyle"/>
+                <TextView
+                    android:text="@string/instantaneous_current"
+                    style="@style/statsTextStyle"/>
+                <TextView
+                    android:text="@string/full_in"
+                    style="@style/statsTextStyle"/>
+                <TextView
+                    android:text="@string/empty_in"
+                    style="@style/statsTextStyle"/>
+                <TextView
+                    android:text="@string/last_changed_at"
+                    style="@style/statsTextStyle"/>
+                <TextView
+                    android:text="@string/battery_health"
+                    style="@style/statsTextStyle"/>
+            </LinearLayout>
+            <LinearLayout
+                android:id="@+id/linearLayout2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                app:layout_constraintStart_toEndOf="@+id/linearLayout1"
+                app:layout_constraintTop_toTopOf="parent"
+                android:layout_marginStart="4dp"
+                >
+                <TextView
+                    android:id="@+id/batteryLevel"
+                    android:text="@string/unknown"
+                    style="@style/statsTextStyle"/>
+                <TextView
+                    android:id="@+id/batteryVoltage"
+                    android:text="@string/unknown"
+                    style="@style/statsTextStyle"/>
+                <TextView
+                    android:id="@+id/batteryCurrent"
+                    android:text="@string/unknown"
+                    style="@style/statsTextStyle"/>
+                <TextView
+                    android:id="@+id/timeLeftUntilFull"
+                    android:text="@string/unknown"
+                    style="@style/statsTextStyle"/>
+                <TextView
+                    android:id="@+id/timeLeftUntilEmpty"
+                    android:text="@string/unknown"
+                    style="@style/statsTextStyle"/>
+                <TextView
+                    android:id="@+id/lastChanged"
+                    android:text="@string/unknown"
+                    style="@style/statsTextStyle"/>
+                <TextView
+                    android:id="@+id/batteryHealth"
+                    android:text="@string/unknown"
+                    style="@style/statsTextStyle"/>
+            </LinearLayout>
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </LinearLayout>
+</ScrollView>
