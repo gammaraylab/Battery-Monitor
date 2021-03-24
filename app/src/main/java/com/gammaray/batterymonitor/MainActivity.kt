@@ -5,10 +5,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.os.BatteryManager
-import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
+import android.os.*
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
@@ -79,7 +76,6 @@ class MainActivity : AppCompatActivity() {
         "Dec"
     )
     private var watchingHistory = false
-//    private var writePermission = false
     private lateinit var batteryManager: BatteryManager
     private var batteryStatus: Intent?=null
     private var status=0
@@ -90,7 +86,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
     private val fileProviderService = FileProviderService()
-    //private val quickUpdate=//
     private val sb = StringBuilder()
     private val runnable= object:Runnable {
         override fun run() {
@@ -219,7 +214,11 @@ class MainActivity : AppCompatActivity() {
         xAxis.setDrawGridLines(false)
 
         if (checkPermissions()) {
-            startService(Intent(this, BatteryMonitorService::class.java))
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+                this.startForegroundService(Intent(this, BatteryMonitorService::class.java))
+            else
+                startService(Intent(this, BatteryMonitorService::class.java))
+
             writePermission = true
             if (!watchingHistory)
                 drawChart()

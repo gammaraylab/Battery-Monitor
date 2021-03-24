@@ -5,9 +5,12 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.BitmapFactory
+import android.graphics.Color
 import android.os.*
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
+import kotlinx.android.synthetic.main.activity_main.*
 import java.io.File
 import java.io.IOException
 import java.text.SimpleDateFormat
@@ -23,6 +26,10 @@ class BatteryMonitorService : Service() {
     private lateinit var notificationBuilder: NotificationCompat.Builder
     private lateinit var notificationManager: NotificationManager
     private val parser = LogParser()
+
+    private val channelID="com.gammaray.batterymonitor.notification_id"
+    private lateinit var batteryManager: BatteryManager
+    private var batteryStatus: Intent?=null
 
     private val runnable=object: Runnable {
         override fun run() {
@@ -46,21 +53,33 @@ class BatteryMonitorService : Service() {
         intentFilter.addAction("android.intent.action.DATE_CHANGED")
         intentFilter.addAction("android.intent.action.BOOT_COMPLETED")
         registerReceiver(broadcastReceiver, intentFilter)
-        createNotificationChannel()
-        notificationBuilder = addNotification()
-        val systemService: Any = getSystemService(Context.NOTIFICATION_SERVICE)
-            notificationManager = systemService as NotificationManager
-            val notificationManager2 = notificationManager
-            val builder = notificationBuilder
-            notificationManager2.notify(NOTIFICATION_ID, builder.build())
-            Handler(Looper.getMainLooper()).postDelayed({runnable
-            },delay)
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+            createNotificationChannel()
+
+        batteryManager = getSystemService(Context.BATTERY_SERVICE) as BatteryManager
+        batteryStatus = registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+
+        notificationManager =getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notificationIntent = Intent(this, MainActivity::class.java)
+        val pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0)
+        notificationBuilder = NotificationCompat.Builder(this, channelID)
+            .setContentTitle("Stats")
+            .setContentText("Tap to see graph")
+            .setSmallIcon(R.drawable.notification_icon_small)
+            .setOngoing(false)
+            .setContentIntent(pendingIntent)
+
+        startForeground(1,notificationBuilder.build())
+        notificationManager.notify(1,notificationBuilder.build())
+        Handler(Looper.getMainLooper()).postDelayed(runnableNotificationUpdater, 1000)
+
+        Handler(Looper.getMainLooper()).postDelayed(runnable, delay)
     }
 
     override fun onDestroy() {
-        val notificationManager2 = notificationManager
-        notificationManager2.cancel(NOTIFICATION_ID)
+        notificationManager.cancel(NOTIFICATION_ID)
         unregisterReceiver(broadcastReceiver)
+        Handler(Looper.getMainLooper()).removeCallbacksAndMessages(runnableNotificationUpdater)
         super.onDestroy()
     }
 
@@ -103,13 +122,11 @@ class BatteryMonitorService : Service() {
             if(file.exists() && file.length()>0){
                 val sb=StringBuilder()
                 val line=file.readText().subSequence(file.length().toInt()-4,file.length().toInt()-1).reversed()
-//                Log.e("TAG","${line}  xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
                 for(i in line){
                     if(i==':')
                         break
                     sb.append(i)
                 }
-//                Log.e("TAG","${line.length} - ${sb.reverse().toString().toInt()} vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv")
                 tmpLevel=sb.toString().toInt()
             }
         }
@@ -123,27 +140,34 @@ class BatteryMonitorService : Service() {
         }
     }
 
-    private fun addNotification(): NotificationCompat.Builder {
-        val icon=BitmapFactory.decodeResource(resources,R.drawable.notification_icon_large)
-        return NotificationCompat.Builder(this, "com.gammaray.batterymonitor.notification_id")
-            .setContentTitle("Battery monitor")
-            .setContentText("service running")
-            .setSmallIcon(R.drawable.notification_icon_small)
-            .setLargeIcon(icon)
-            .setContentIntent(PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java), 0))
+    private val runnableNotificationUpdater= object:Runnable {
+        val sb=StringBuilder()
+        var current=0
+        var voltage:Int?=0
+        var level:Int?=0
+        override fun run() {
+            current=-batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW)/1000
+            voltage=batteryStatus?.getIntExtra(BatteryManager.EXTRA_VOLTAGE, -1)
+            level=batteryStatus?.getIntExtra(BatteryManager.EXTRA_LEVEL,-1)
+            sb.clear()
+            sb.append("${current}mA | ")
+            sb.append("${voltage}mV | ")
+            sb.append("$level%")
+            notificationBuilder.setContentTitle(sb)
+            notificationManager.notify(1,notificationBuilder.build())
+            Handler(Looper.getMainLooper()).postDelayed(this, 1000)
+        }
     }
 
-    private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= 26) {
-            val channel = NotificationChannel(
-                "com.gammaray.batterymonitor.notification_id",
-                "com.gammaray.batterymonitor.notification_name",
-                NotificationManager.IMPORTANCE_DEFAULT
-            )
-            channel.description = "monitor battery"
-            val systemService: Any = getSystemService(Context.NOTIFICATION_SERVICE)
-            (systemService as NotificationManager).createNotificationChannel(channel)
-        }
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun createNotificationChannel( ){
+        val chan = NotificationChannel(channelID,
+            "battery monitor service", NotificationManager.IMPORTANCE_NONE)
+        chan.lightColor = Color.GREEN
+        chan.lockscreenVisibility = Notification.VISIBILITY_PRIVATE
+        chan.description = "monitor battery"
+        val service = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        service.createNotificationChannel(chan)
     }
 
 }
