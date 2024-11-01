@@ -252,7 +252,6 @@ class MainActivity : AppCompatActivity() {
                 timeLeftUntilFull.text = stats.timeTillFull(isCharging)
                 timeLeftUntilEmpty.text = stats.timeTillEmpty(isCharging)
                 lastChanged.text = stats.timeSinceLastChanged()
-                batteryHealth.text = stats.batteryHealth()
 
                 val entries = ArrayList<Entry>()
                 if (rawDataList.isNotEmpty()) {

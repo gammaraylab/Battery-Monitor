@@ -67,9 +67,6 @@
                 <TextView
                     android:text="@string/last_changed_at"
                     style="@style/statsTextStyle"/>
-                <TextView
-                    android:text="@string/battery_health"
-                    style="@style/statsTextStyle"/>
             </LinearLayout>
             <LinearLayout
                 android:id="@+id/linearLayout2"
