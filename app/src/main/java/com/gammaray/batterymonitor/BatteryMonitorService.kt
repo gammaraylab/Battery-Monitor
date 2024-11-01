@@ -144,15 +144,12 @@ class BatteryMonitorService : Service() {
         val sb=StringBuilder()
         var current=0
         var voltage:Int?=0
-        var level:Int?=0
         override fun run() {
             current=-batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW)/1000
             voltage=batteryStatus?.getIntExtra(BatteryManager.EXTRA_VOLTAGE, -1)
-            level=batteryStatus?.getIntExtra(BatteryManager.EXTRA_LEVEL,-1)
             sb.clear()
             sb.append("${current}mA | ")
-            sb.append("${voltage}mV | ")
-            sb.append("$level%")
+            sb.append("${voltage}mV")
             notificationBuilder.setContentTitle(sb)
             notificationManager.notify(1,notificationBuilder.build())
             Handler(Looper.getMainLooper()).postDelayed(this, 1000)
