@@ -51,11 +51,6 @@ class MainActivity : AppCompatActivity() {
             Log.e("WARNING", message)
             Toasty.warning(instance, message, length).show()
         }
-
-        fun success(/*instance: Context,*/ message: String, length: Int = Toasty.LENGTH_SHORT) {
-            Log.e("SUCCESS", message)
-            Toasty.success(instance, message, length).show()
-        }
     }
     init {
         instance = this
