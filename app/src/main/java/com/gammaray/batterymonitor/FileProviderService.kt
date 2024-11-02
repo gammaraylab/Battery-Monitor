@@ -14,11 +14,4 @@ class FileProviderService {
             file.createNewFile()
         return file
     }
-    fun statFile(context:Context):File{
-        val filesDir = context.filesDir
-        val file = File(filesDir,"stat.txt")
-        if (!file.exists() && MainActivity.writePermission)
-            file.createNewFile()
-        return file
-    }
 }
