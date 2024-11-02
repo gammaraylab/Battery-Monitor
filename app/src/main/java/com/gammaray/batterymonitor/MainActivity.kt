@@ -32,19 +32,6 @@ class MainActivity : AppCompatActivity() {
         lateinit var instance: MainActivity
         var writePermission: Boolean=false
         var isCharging=false
-        fun errorHandler(site: String?, error: String) {
-            Log.e(site, error)
-            Toast.makeText(instance, error, Toast.LENGTH_SHORT).show()
-        }
-
-        fun log(message: String, tag: String = "Testing") {
-            Log.e(tag, message)
-        }
-
-        fun error(message: String, length: Int = Toasty.LENGTH_SHORT) {
-            Log.e("ERROR", message)
-            Toasty.error(instance, message, length).show()
-        }
 
         fun warn(message: String, length: Int = Toasty.LENGTH_SHORT) {
             Intrinsics.checkParameterIsNotNull(message, "message")
@@ -97,6 +84,7 @@ class MainActivity : AppCompatActivity() {
             Handler(Looper.getMainLooper()).postDelayed(this, 1000)
         }
     }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -104,6 +92,7 @@ class MainActivity : AppCompatActivity() {
 
         initialize()
     }
+
     override fun onResume() {
         //    quickUpdate.start()
         super.onResume()
@@ -112,15 +101,18 @@ class MainActivity : AppCompatActivity() {
         if (!watchingHistory)
             drawChart()
     }
+
     override fun onDestroy() {
         unregisterReceiver(broadcastReceiver)
         super.onDestroy()
     }
+
     override fun onPause() {
         //    this.quickUpdate.cancel()
         Handler(Looper.getMainLooper()).removeCallbacksAndMessages(runnable)
         super.onPause()
     }
+
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permission: Array<String>,
@@ -137,12 +129,14 @@ class MainActivity : AppCompatActivity() {
             startActivity(intent)
         }
     }
+
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         if (!checkPermissions())
             return false
         menuInflater.inflate(R.menu.menu, menu)
         return true
     }
+
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         val itemId: Int = item.itemId
         if (itemId == R.id.exit)
@@ -180,6 +174,7 @@ class MainActivity : AppCompatActivity() {
         }
         return true
     }
+
     fun viewCurrent(it: View?) {
         watchCurrentData.visibility = View.GONE
         watchingHistory=false
@@ -219,9 +214,9 @@ class MainActivity : AppCompatActivity() {
                 drawChart()
             return
         }
-        error( /*this,*/ "give storage access")
         requestPermissions()
     }
+
     private fun drawChart(file: File = fileProviderService.currentFile(this)) {
         if (writePermission) {
             val parser = LogParser()
@@ -247,6 +242,7 @@ class MainActivity : AppCompatActivity() {
                 rawDataList.add(temp[n - 1])
 
                 stats.updateStats(rawDataList)
+
                 status=batteryStatus?.getIntExtra(BatteryManager.EXTRA_STATUS, -1) ?: -1
                 isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING
                 timeLeftUntilFull.text = stats.timeTillFull(isCharging)
@@ -261,8 +257,6 @@ class MainActivity : AppCompatActivity() {
                         entries.add(Entry(((i.hh * 60) + i.mm).toFloat(), i.level.toFloat()))
                     }
                     try {
-                        val size = averageLevel / rawDataList.size
-//                            display average battery level
                     } catch (e: ArithmeticException) {
                         e.printStackTrace()
                     }
@@ -277,19 +271,20 @@ class MainActivity : AppCompatActivity() {
                 }
             } catch (e: IOException) {
                 e.printStackTrace()
-                error(/* this,*/ "MainActivity.drawChart() \ncannot read from " + file.name.toString())
             } catch (e: NoSuchElementException) {
                 e.printStackTrace()
                 sb.clear()
                 sb.append("not calculated yet")
                 batteryVoltage.text=sb
                 batteryLevel.text=sb
-                error( /*this,*/ "No Entry present in the system")
             }catch (e:ArrayIndexOutOfBoundsException){
+                e.printStackTrace()
+            }catch (e: Exception){
                 e.printStackTrace()
             }
         }
     }
+
     private fun LineDataSet.init(){
         this.lineWidth = 1.0f
         this.setDrawValues(false)
@@ -299,6 +294,7 @@ class MainActivity : AppCompatActivity() {
         this.color =ContextCompat.getColor(this@MainActivity, R.color.colorGraphLine)
         this.mode = LineDataSet.Mode.LINEAR
     }
+
     private fun checkPermissions(): Boolean {
         val permissionRead =
             ContextCompat.checkSelfPermission(this, "android.permission.READ_EXTERNAL_STORAGE")
