@@ -61,7 +61,8 @@ class BatteryMonitorService : Service() {
 
         notificationManager =getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val notificationIntent = Intent(this, MainActivity::class.java)
-        val pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0)
+        val pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent,
+            PendingIntent.FLAG_IMMUTABLE)
         notificationBuilder = NotificationCompat.Builder(this, channelID)
             .setContentTitle("Stats")
             .setContentText("Tap to see graph")
@@ -94,12 +95,12 @@ class BatteryMonitorService : Service() {
                 applicationContext,
             1,
             restartServiceIntent,
-            PendingIntent.FLAG_ONE_SHOT
+            PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
         )
         val systemService: Any =
             applicationContext
                 .getSystemService(Context.ALARM_SERVICE/*NotificationCompat.CATEGORY_ALARM*/)
-        (systemService as AlarmManager)[3, SystemClock.elapsedRealtime() + 2000.toLong()] =
+        (systemService as AlarmManager)[AlarmManager.ELAPSED_REALTIME, SystemClock.elapsedRealtime() + 2000.toLong()] =
             restartServicePendingIntent
         super.onTaskRemoved(rootIntent)
     }
@@ -136,6 +137,7 @@ class BatteryMonitorService : Service() {
             val mm: String = minuteFormat.format(Date())
             val logParser = parser
             logParser.write(file, hh, mm, level)
+
             context.sendBroadcast(localIntent)
         }
     }
