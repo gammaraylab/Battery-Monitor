@@ -1,5 +1,7 @@
 package com.gammaray.batterymonitor
 
+import android.widget.Toast
+import com.gammaray.batterymonitor.MainActivity.Companion.instance
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.IOException
@@ -62,22 +64,15 @@ class LogParser {
                 dataList.add(tmp)
             }
         } catch (e: FileNotFoundException) {
-            MainActivity.errorHandler(
-                "LogParser.read()",
-                file.name.toString() + " not found"
-            )
+            Toast.makeText(instance, file.name.toString() + " not found", Toast.LENGTH_SHORT).show()
         } catch (e2: NumberFormatException) {
-            MainActivity.errorHandler(
-                "LogParser.read()",
-                "Invalid entry, clearing cache " + e2.message.toString()
-            )
+            Toast.makeText(instance, "Invalid entry, clearing cache " + e2.message.toString(), Toast.LENGTH_SHORT).show()
             file.writeText("")
         } catch (e3: StringIndexOutOfBoundsException) {
-            MainActivity.errorHandler(
-                "LogParser.read()",
-                "Invalid entry, clearing cache " + e3.message.toString()
-            )
+            Toast.makeText(instance, "Invalid entry, clearing cache " + e3.message.toString(), Toast.LENGTH_SHORT).show()
             file.writeText("")
+        } catch (e4: Exception){
+            e4.printStackTrace()
         }
         return dataList
     }
@@ -90,7 +85,7 @@ class LogParser {
                 file.writeText("")
         } catch (e: IOException) {
             e.printStackTrace()
-            MainActivity.errorHandler("LogParser.write()", "Unable to write into " + file.name)
+            Toast.makeText(instance, "Unable to write into " + file.name, Toast.LENGTH_SHORT).show()
         }
     }
 }
