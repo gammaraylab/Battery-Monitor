@@ -101,10 +101,6 @@
                     android:id="@+id/lastChanged"
                     android:text="@string/unknown"
                     style="@style/statsTextStyle"/>
-                <TextView
-                    android:id="@+id/batteryHealth"
-                    android:text="@string/unknown"
-                    style="@style/statsTextStyle"/>
             </LinearLayout>
         </androidx.constraintlayout.widget.ConstraintLayout>
     </LinearLayout>
