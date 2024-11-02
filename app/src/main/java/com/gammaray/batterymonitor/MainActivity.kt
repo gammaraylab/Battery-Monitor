@@ -61,6 +61,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var batteryManager: BatteryManager
     private var batteryStatus: Intent?=null
     private var status=0
+    private val delay=1000L
     private val broadcastReceiver=object:BroadcastReceiver(){
         override fun onReceive(context: Context?, intent: Intent?) {
             if (!watchingHistory)
@@ -69,6 +70,7 @@ class MainActivity : AppCompatActivity() {
     }
     private val fileProviderService = FileProviderService()
     private val sb = StringBuilder()
+    //a runnable for updating stats in notification
     private val runnable= object:Runnable {
         override fun run() {
             sb.clear()
@@ -81,23 +83,20 @@ class MainActivity : AppCompatActivity() {
             sb.append(tmp)
             sb.append("mA")
             batteryCurrent.text = sb
-            Handler(Looper.getMainLooper()).postDelayed(this, 1000)
+            Handler(Looper.getMainLooper()).postDelayed(this, delay)
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        //    quickUpdate.start()
-
         initialize()
     }
 
     override fun onResume() {
-        //    quickUpdate.start()
         super.onResume()
         registerReceiver(broadcastReceiver, IntentFilter(BatteryMonitorService.UPDATE_FLAG))
-        Handler(Looper.getMainLooper()).postDelayed(runnable, 1000)
+        Handler(Looper.getMainLooper()).postDelayed(runnable, delay)
         if (!watchingHistory)
             drawChart()
     }
@@ -108,7 +107,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onPause() {
-        //    this.quickUpdate.cancel()
         Handler(Looper.getMainLooper()).removeCallbacksAndMessages(runnable)
         super.onPause()
     }
@@ -137,10 +135,12 @@ class MainActivity : AppCompatActivity() {
         return true
     }
 
+
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         val itemId: Int = item.itemId
         if (itemId == R.id.exit)
             finish()
+        //display option for watching history
         else if (itemId == R.id.history) {
             val calendar: Calendar = Calendar.getInstance()
             val day = calendar.get(Calendar.DAY_OF_MONTH)
@@ -174,23 +174,27 @@ class MainActivity : AppCompatActivity() {
         }
         return true
     }
-
+    //display today's data (clickable only if the user is watching the battery history)
     fun viewCurrent(it: View?) {
         watchCurrentData.visibility = View.GONE
         watchingHistory=false
         drawChart()
     }
+
     override fun onBackPressed() {
         finish()
         super.onBackPressed()
     }
 
     private fun initialize() {
+        //init the notification
         batteryStatus = registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
         registerReceiver(broadcastReceiver, IntentFilter(BatteryMonitorService.UPDATE_FLAG))
-        Handler(Looper.getMainLooper()).postDelayed(runnable, 1000)
+
+        Handler(Looper.getMainLooper()).postDelayed(runnable, delay)
         batteryManager = getSystemService(Context.BATTERY_SERVICE) as BatteryManager
 
+        //init the chart, define how the chart will look
         chart.setDrawGridBackground(false)
         chart.marker = BatteryLevelMarker(this, R.layout.marker_view)
         val yAxis:YAxis = chart.axisLeft
@@ -217,6 +221,7 @@ class MainActivity : AppCompatActivity() {
         requestPermissions()
     }
 
+    //plot the actual chart
     private fun drawChart(file: File = fileProviderService.currentFile(this)) {
         if (writePermission) {
             val parser = LogParser()
@@ -233,6 +238,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             try {
+                // read data from text file into ArrayList
                 val rawDataList = ArrayList<Data>()
                 val temp = parser.read(file)
                 val n=temp.size
@@ -241,10 +247,11 @@ class MainActivity : AppCompatActivity() {
                         rawDataList.add(temp[i])
                 rawDataList.add(temp[n - 1])
 
-                stats.updateStats(rawDataList)
+                stats.updateStats(rawDataList)  //update the battery stats
 
                 status=batteryStatus?.getIntExtra(BatteryManager.EXTRA_STATUS, -1) ?: -1
                 isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING
+                //display the stats to user
                 timeLeftUntilFull.text = stats.timeTillFull(isCharging)
                 timeLeftUntilEmpty.text = stats.timeTillEmpty(isCharging)
                 lastChanged.text = stats.timeSinceLastChanged()
@@ -252,39 +259,34 @@ class MainActivity : AppCompatActivity() {
                 val entries = ArrayList<Entry>()
                 if (rawDataList.isNotEmpty()) {
                     var averageLevel = 0
-                    for(i in rawDataList){
+                    for(i in rawDataList){  //make an entry set for plotting the graph
                         averageLevel+=i.level
                         entries.add(Entry(((i.hh * 60) + i.mm).toFloat(), i.level.toFloat()))
                     }
-                    try {
-                    } catch (e: ArithmeticException) {
-                        e.printStackTrace()
-                    }
+
                     sb.clear()
                     sb.append(rawDataList.last().level)
                     sb.append("%")
                     batteryLevel.text = sb
                     val dataSet = LineDataSet(entries, "Battery level")
-                    dataSet.init()
+                    dataSet.init()  //init the graph parameters
                     chart.data =LineData(dataSet)
-                    chart.invalidate()
+                    chart.invalidate()  //update the previous chart with current data
                 }
-            } catch (e: IOException) {
-                e.printStackTrace()
-            } catch (e: NoSuchElementException) {
-                e.printStackTrace()
+            }
+            catch (e: NoSuchElementException) {
                 sb.clear()
                 sb.append("not calculated yet")
                 batteryVoltage.text=sb
                 batteryLevel.text=sb
-            }catch (e:ArrayIndexOutOfBoundsException){
-                e.printStackTrace()
-            }catch (e: Exception){
+            }
+            catch (e: Exception){
                 e.printStackTrace()
             }
         }
     }
 
+    //initialize the Linedataset for graph plotting
     private fun LineDataSet.init(){
         this.lineWidth = 1.0f
         this.setDrawValues(false)
