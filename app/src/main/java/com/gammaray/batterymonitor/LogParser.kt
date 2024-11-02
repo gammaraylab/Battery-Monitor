@@ -9,61 +9,35 @@ import kotlin.jvm.internal.Intrinsics
 
 class LogParser {
     fun read(file: File): ArrayList<Data> {
-        var i: Int
-        var i2: Int
         val dataList = ArrayList<Data>()
         try {
-            val str: String =file.readText()
-            var i3 = 0
-            while (i3 < str.length) {
-                var i4 = i3 + 1
-                var tmpString = str[i3].toString()
-                if (str[i4] != ':') {
-                    tmpString += str[i4].toString()
-                    i4++
+            // Read all lines from the file
+            val lines = file.readLines()
+            lines.forEach {line ->
+                var index = 0
+                while (index + 7 <= line.length) {
+                    // Extract each 7-character entry
+                    val entry = line.substring(index, index + 7)
+
+                    // Parse entry into hh, mm, and level integers
+                    val hh = entry.substring(0, 2).toInt()
+                    val mm = entry.substring(2, 4).toInt()
+                    val level = entry.substring(4, 7).toInt()
+
+                    // Create a temporary Data object with the parsed values
+                    val tmpData = Data()
+                    tmpData.hh = hh
+                    tmpData.mm = mm
+                    tmpData.level = level
+
+                    // Add the tmpData object to the dataList
+                    dataList.add(tmpData)
+
+                    // Move to the next 7-character block
+                    index += 7
                 }
-                val i5 = i4 + 1
-                val tmpHour = tmpString.toInt()
-                val i6 = i5 + 1
-                var tmpString2 = str[i5].toString()
-                if (str[i6] != ':') {
-                    val sb = StringBuilder()
-                    sb.append(tmpString2)
-                    i = i6 + 1
-                    sb.append(str[i6].toString())
-                    tmpString2 = sb.toString()
-                } else {
-                    i = i6
-                }
-                val i7 = i + 1
-                val tmpMinute = tmpString2.toInt()
-                val i8 = i7 + 1
-                var tmpString3 = str[i7].toString()
-                if (str[i8] != '#') {
-                    val sb2 = StringBuilder()
-                    sb2.append(tmpString3)
-                    val i9 = i8 + 1
-                    sb2.append(str[i8].toString())
-                    tmpString3 = sb2.toString()
-                    if (str[i9] != '#') {
-                        val sb3 = StringBuilder()
-                        sb3.append(tmpString3)
-                        i2 = i9 + 1
-                        sb3.append(str[i9].toString())
-                        tmpString3 = sb3.toString()
-                    } else
-                        i2 = i9
-                } else
-                    i2 = i8
-                i3 = i2 + 1
-                val tmpLevel = tmpString3.toInt()
-                val tmp = Data()
-                tmp.hh=tmpHour
-                tmp.mm=(tmpMinute)
-                tmp.level=(tmpLevel)
-                dataList.add(tmp)
             }
-        } catch (e: FileNotFoundException) {
+        }catch (e: FileNotFoundException) {
             Toast.makeText(instance, file.name.toString() + " not found", Toast.LENGTH_SHORT).show()
         } catch (e2: NumberFormatException) {
             Toast.makeText(instance, "Invalid entry, clearing cache " + e2.message.toString(), Toast.LENGTH_SHORT).show()
@@ -78,14 +52,18 @@ class LogParser {
     }
 
     fun write(file: File, hh: String, mm: String, level: Int) {
+        val formattedLevel = level.toString().padStart(3, '0')
         try {
             file.appendText(
-                "$hh:$mm:$level#")
-            if (file.length() > 51200.toLong())
+                "$hh$mm$formattedLevel")
+            if (file.length() > 51200L) //if file size exceeds 50KB limit clear it
                 file.writeText("")
         } catch (e: IOException) {
             e.printStackTrace()
             Toast.makeText(instance, "Unable to write into " + file.name, Toast.LENGTH_SHORT).show()
+        }
+        catch (e: Exception){
+            e.printStackTrace()
         }
     }
 }
