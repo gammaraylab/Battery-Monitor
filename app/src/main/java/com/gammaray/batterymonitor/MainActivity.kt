@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.net.Uri
 import android.os.*
 import android.util.Log
 import android.view.Menu
@@ -138,41 +139,53 @@ class MainActivity : AppCompatActivity() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         val itemId: Int = item.itemId
-        if (itemId == R.id.exit)
-            finish()
-        //display option for watching history
-        else if (itemId == R.id.history) {
-            val calendar: Calendar = Calendar.getInstance()
-            val day = calendar.get(Calendar.DAY_OF_MONTH)
-            val month = calendar.get(Calendar.MONTH)
-            val year = calendar.get(Calendar.YEAR)
+        when (itemId) {
+            R.id.exit -> {
+                finish()
+                return true
+            }
+            R.id.source -> {
+                val srcUrl="https://github.com/gammaraylab/Battery-Monitor"
+                val intent= Intent(Intent.ACTION_VIEW)
+                intent.data= Uri.parse(srcUrl)
+                startActivity(intent)
+                return true
+            }
+            //display option for watching history
+            R.id.history -> {
+                val calendar: Calendar = Calendar.getInstance()
+                val day = calendar.get(Calendar.DAY_OF_MONTH)
+                val month = calendar.get(Calendar.MONTH)
+                val year = calendar.get(Calendar.YEAR)
 
-            val dpd = DatePickerDialog(this, { _, year1, monthOfYear, dayOfMonth ->
-                val monthNew: String = monthList[monthOfYear]
-                sb.clear()
-                if (dayOfMonth.toString().length == 1) {
-                    sb.append('0')
-                    sb.append(dayOfMonth)
-                } else
-                    sb.append(dayOfMonth)
-
-                val filesDir: File = filesDir
-                val file = File(filesDir, "$sb-$monthNew-${year1 % 100}.txt")
-                watchingHistory = false
-                if (fileProviderService.currentFile(this).name != file.name) {
-                    if (file.exists()) {
-                        watchingHistory = true
-                        drawChart(file)
-                        watchCurrentData.visibility = View.VISIBLE
+                val dpd = DatePickerDialog(this, { _, year1, monthOfYear, dayOfMonth ->
+                    val monthNew: String = monthList[monthOfYear]
+                    sb.clear()
+                    if (dayOfMonth.toString().length == 1) {
+                        sb.append('0')
+                        sb.append(dayOfMonth)
                     } else
-                        warn(/*this, */"No data present")
+                        sb.append(dayOfMonth)
 
-                }
-            }, year, month, day)
-            dpd.datePicker.maxDate=System.currentTimeMillis()
-            dpd.show()
+                    val filesDir: File = filesDir
+                    val file = File(filesDir, "$sb-$monthNew-${year1 % 100}.txt")
+                    watchingHistory = false
+                    if (fileProviderService.currentFile(this).name != file.name) {
+                        if (file.exists()) {
+                            watchingHistory = true
+                            drawChart(file)
+                            watchCurrentData.visibility = View.VISIBLE
+                        } else
+                            warn(/*this, */"No data present")
+
+                    }
+                }, year, month, day)
+                dpd.datePicker.maxDate=System.currentTimeMillis()
+                dpd.show()
+                return true
+            }
         }
-        return true
+        return false
     }
     //display today's data (clickable only if the user is watching the battery history)
     fun viewCurrent(it: View?) {
